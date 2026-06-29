@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#1a73e8">
+<title>ക്ലാസ് മാനേജർ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bl:#1a73e8;--bll:#e8f0fe;--gn:#1e7e34;--gnl:#e6f4ea;
+  --rd:#c5221f;--rdl:#fce8e6;--am:#b06000;--aml:#fef7e0;
+  --gy:#5f6368;--bd:#dadce0;--bg:#f1f3f4;--wh:#fff;--tx:#202124;
+  --r:14px;--rs:10px;--sh:0 2px 8px rgba(0,0,0,.1)
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5}
+.app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bl);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 3px 10px rgba(26,115,232,.45)}
+.topbar h1{font-size:17px;font-weight:700;flex:1;letter-spacing:.2px}
+.sb{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600}
+.sb-ok{background:rgba(255,255,255,.22);color:#fff}
+.sb-err{background:var(--rdl);color:var(--rd)}
+
+/* ── CLASS BAR ── */
+.clsbar{background:var(--wh);border-bottom:1px solid var(--bd);padding:8px 12px;display:flex;align-items:center;gap:6px;overflow-x:auto;position:sticky;top:54px;z-index:97;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.cbtn{padding:7px 16px;border-radius:20px;border:2px solid var(--bd);background:var(--wh);font-size:13px;cursor:pointer;color:var(--gy);white-space:nowrap;font-weight:600;flex-shrink:0;transition:all .15s}
+.cbtn.active{background:var(--bl);color:#fff;border-color:var(--bl);box-shadow:0 2px 6px rgba(26,115,232,.3)}
+.cbtn:hover:not(.active){background:var(--bll);border-color:var(--bl);color:var(--bl)}
+.cgear{width:34px;height:34px;border-radius:50%;border:2px dashed var(--bd);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;transition:all .15s}
+.cgear:hover{border-color:var(--bl);background:var(--bll)}
+
+/* ── TAB BAR ── */
+.tabbar{display:flex;background:var(--wh);border-bottom:2px solid var(--bd);position:sticky;top:97px;z-index:96;overflow-x:auto;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.tab{flex:1;min-width:68px;padding:10px 6px 9px;text-align:center;font-size:11px;font-weight:600;color:var(--gy);cursor:pointer;border-bottom:3px solid transparent;display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;transition:color .2s;letter-spacing:.2px}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--bl);border-bottom-color:var(--bl)}
+.tab:hover:not(.active){color:#333;background:var(--bg)}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:12px 12px 90px}
+.sec{display:none}.sec.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--wh);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.ct{font-size:12px;font-weight:700;color:var(--gy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.6px}
+
+/* ── ATTENDANCE ── */
+.astats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.astat{background:var(--bg);border-radius:var(--rs);padding:10px 4px;text-align:center;border:1px solid var(--bd)}
+.astat .n{font-size:22px;font-weight:700;line-height:1.2}
+.astat .l{font-size:11px;color:var(--gy);margin-top:2px}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ai{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--bg);border-radius:var(--rs);cursor:pointer;border:2px solid transparent;user-select:none;transition:all .15s}
+.ai.P{background:var(--gnl);border-color:#34a853}
+.ai.A{background:var(--rdl);border-color:#ea4335}
+.ai.L{background:var(--aml);border-color:#fbbc04}
+.ai:active{transform:scale(.97)}
+.aname{font-size:13px;font-weight:700;flex:1}
+.abadge{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:700;background:#dadce0;color:var(--gy)}
+.ai.P .abadge{background:#34a853;color:#fff}
+.ai.A .abadge{background:#ea4335;color:#fff}
+.ai.L .abadge{background:#fbbc04;color:#5f3c00}
+
+/* ── FORMS ── */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--gy);margin-bottom:5px;letter-spacing:.2px}
+.fg input,.fg select,.fg textarea{width:100%;border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 12px;font-size:14px;background:var(--wh);color:var(--tx);outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--bl);box-shadow:0 0 0 3px rgba(26,115,232,.12)}
+.fg textarea{resize:vertical;min-height:60px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* ── SECTION LABEL ── */
+.sec-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:8px 0 10px;border-bottom:2px solid var(--bd);margin-bottom:12px}
+.sec-label.bl{color:var(--bl)}.sec-label.gn{color:var(--gn)}.sec-label.am{color:var(--am)}.sec-label.rd{color:var(--rd)}
+
+/* ── BUTTONS ── */
+.btn{padding:12px 16px;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;transition:all .15s;letter-spacing:.2px}
+.btn:active{transform:scale(.97)}
+.bb{background:var(--bl);color:#fff;box-shadow:0 2px 6px rgba(26,115,232,.3)}
+.bg2{background:var(--gn);color:#fff;box-shadow:0 2px 6px rgba(30,126,52,.3)}
+.bw{background:#25d366;color:#fff;box-shadow:0 2px 6px rgba(37,211,102,.3)}
+.bo{background:var(--wh);color:var(--bl);border:2px solid var(--bl)}
+.br{background:var(--rdl);color:var(--rd);border:1.5px solid #ea4335}
+.bgr{background:var(--bg);color:var(--gy);border:1.5px solid var(--bd)}
+.bam{background:var(--aml);color:var(--am);border:1.5px solid #fbbc04}
+.bsm{padding:7px 12px;font-size:12px;width:auto;border-radius:8px}
+
+/* ── GRADE PILLS ── */
+.gp{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:800}
+
+/* ── GRADE TABLE ── */
+.gt{width:100%;border-collapse:collapse;font-size:12px}
+.gt th{background:var(--bg);padding:7px 5px;text-align:center;font-weight:700;color:var(--gy);font-size:11px;text-transform:uppercase;white-space:nowrap;border-bottom:2px solid var(--bd)}
+.gt td{padding:6px 5px;border-bottom:1px solid var(--bd);text-align:center;vertical-align:middle}
+.gt tr:hover td{background:#f8f9ff}
+.gt input[type=number]{width:52px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 5px;font-size:12px;text-align:center;background:var(--wh);transition:border-color .2s}
+.gt input[type=number]:focus{border-color:var(--bl);outline:none}
+.gt select{border:1.5px solid var(--bd);border-radius:6px;padding:3px 4px;font-size:11px;background:var(--wh);max-width:100px}
+
+/* ── ACTIVITY ITEMS ── */
+.aci{display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg);border-radius:var(--rs);margin-bottom:6px;border:1px solid var(--bd)}
+.acicon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.acinfo{flex:1}.acname{font-size:13px;font-weight:700}.acmeta{font-size:11px;color:var(--gy);margin-top:2px}
+
+/* ── STUDENTS ── */
+.sc{display:flex;align-items:center;gap:11px;padding:12px 14px;background:var(--wh);border-radius:var(--r);margin-bottom:7px;cursor:pointer;box-shadow:var(--sh);transition:box-shadow .15s}
+.sc:hover{box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.sc:active{transform:scale(.98)}
+.av{width:42px;height:42px;border-radius:50%;background:var(--bll);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--bl);flex-shrink:0;border:2px solid rgba(26,115,232,.2)}
+
+/* ── SEARCH ── */
+.srch{display:flex;align-items:center;gap:8px;background:var(--wh);border:1.5px solid var(--bd);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;box-shadow:var(--sh)}
+.srch:focus-within{border-color:var(--bl);box-shadow:0 0 0 3px rgba(26,115,232,.12)}
+.srch input{border:none;background:transparent;font-size:14px;flex:1;outline:none;color:var(--tx)}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sbox{background:var(--wh);border-radius:var(--rs);padding:12px;text-align:center;box-shadow:var(--sh)}
+.sbox .big{font-size:26px;font-weight:800;line-height:1.2}
+.sbox .sm{font-size:11px;color:var(--gy);margin-top:3px}
+
+/* ── TERM TABS ── */
+.trow{display:flex;gap:6px;margin-bottom:12px}
+.ttab{flex:1;text-align:center;padding:9px 4px;font-size:13px;border-radius:var(--rs);cursor:pointer;background:var(--bg);color:var(--gy);border:1.5px solid var(--bd);font-weight:700;transition:all .15s}
+.ttab.active{background:var(--bl);color:#fff;border-color:var(--bl);box-shadow:0 2px 6px rgba(26,115,232,.3)}
+
+/* ── CHIPS ── */
+.crow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--bd);background:var(--wh);color:var(--gy);font-weight:600;transition:all .15s}
+.chip.active{background:var(--bl);color:#fff;border-color:var(--bl)}
+.chip.gn.active{background:var(--gn);border-color:var(--gn)}
+.chip:hover:not(.active){border-color:var(--bl);color:var(--bl)}
+
+/* ── NOTICES ── */
+.note{padding:12px 14px;background:var(--bll);border-radius:var(--rs);font-size:13px;color:#174ea6;margin-bottom:12px;line-height:1.6;border-left:4px solid var(--bl)}
+.note.gn{background:var(--gnl);color:#1e5c1e;border-left-color:var(--gn)}
+.note.am{background:var(--aml);color:var(--am);border-left-color:#fbbc04}
+
+/* ── DATE ROW ── */
+.drow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.drow input[type=date]{border:1.5px solid var(--bd);border-radius:var(--rs);padding:7px 11px;font-size:13px;background:var(--wh);color:var(--tx);font-weight:600}
+.drow input[type=date]:focus{border-color:var(--bl);outline:none}
+
+/* ── GRADE RANGE ── */
+.gritem{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--bg);border-radius:var(--rs);margin-bottom:6px;border:1px solid var(--bd)}
+.grl{width:58px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;text-align:center;background:var(--wh)}
+.grp{width:52px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 6px;font-size:13px;text-align:center;background:var(--wh)}
+.grc{width:36px;height:32px;border:1.5px solid var(--bd);border-radius:6px;cursor:pointer;padding:2px}
+
+/* ── COMPLETION ── */
+.cmp-tick{width:34px;height:34px;border-radius:50%;border:2.5px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;transition:all .2s}
+.cmp-tick.done{background:#34a853;border-color:#34a853;color:#fff;box-shadow:0 2px 6px rgba(52,168,83,.4)}
+.cmp-tick:active{transform:scale(.9)}
+
+/* ── SUMMARY FILTER ── */
+.sf-row{display:flex;gap:6px;margin-bottom:12px}
+.sfbtn{flex:1;padding:9px 4px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--bd);background:var(--bg);color:var(--gy);text-align:center;transition:all .15s}
+.sfbtn.a.on{background:var(--bl);color:#fff;border-color:var(--bl)}
+.sfbtn.d.on{background:#34a853;color:#fff;border-color:#34a853}
+.sfbtn.p.on{background:#ea4335;color:#fff;border-color:#ea4335}
+
+/* ── TOGGLE ── */
+.tog-wrap{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 12px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--bd)}
+.tog-wrap label{font-size:13px;font-weight:600;color:var(--tx);flex:1}
+.tog{position:relative;width:44px;height:24px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--bd);border-radius:12px;cursor:pointer;transition:.3s}
+.tslider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog input:checked+.tslider{background:var(--gn)}
+.tog input:checked+.tslider:before{transform:translateX(20px)}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--wh);border-top:1px solid var(--bd);padding:10px 12px;display:flex;gap:8px;z-index:90;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+
+/* ── MODALS ── */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end}
+.ov.open{display:flex}
+.modal{background:var(--wh);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-height:92vh;overflow-y:auto}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mtitle{font-size:17px;font-weight:800;color:var(--tx)}
+.xbtn{background:var(--bg);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--gy);transition:background .15s}
+.xbtn:hover{background:var(--bd)}
+
+/* ── TOAST & LOADER ── */
+#toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:#202124;color:#fff;padding:10px 20px;border-radius:22px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:92vw;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+#loader{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.spin{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--bl);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lmsg{font-size:13px;color:var(--gy);text-align:center;font-weight:500}
+
+canvas{width:100%!important;max-height:200px}
+hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.info-grid .full{grid-column:span 2}
+.info-item{padding:5px 0}
+.info-item span.lbl{display:block;color:var(--gy);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.info-item div{font-size:13px;font-weight:600;color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    <h1>ക്ലാസ് മാനേജർ</h1>
+    <div id="sind" class="sb sb-ok">☁ …</div>
+  </div>
+  <div class="clsbar">
+    <div id="clsrow" style="display:flex;gap:5px;flex:1;overflow-x:auto"></div>
+    <button class="cgear" onclick="openM('m-cls')">⚙</button>
+  </div>
+  <div class="tabbar">
+    <div class="tab active" onclick="goTab('att',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>Attendance
+    </div>
+    <div class="tab" onclick="goTab('te',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>Term Eval
+    </div>
+    <div class="tab" onclick="goTab('ct',this)">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Class Test
+    </div>
+    <div class="tab" onclick="goTab('ca',this)">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Activity
+    </div>
+    <div class="tab" onclick="goTab('rep',this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Report
+    </div>
+    <div class="tab" onclick="goTab('stu',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Students
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- ATTENDANCE -->
+    <div id="sec-att" class="sec active">
+      <div class="card">
+        <div class="drow"><span style="font-weight:600;font-size:14px">ഹാജർ</span><input type="date" id="att-date" onchange="attChange()"></div>
+        <div class="astats">
+          <div class="astat"><div class="n" id="sp" style="color:var(--gn)">0</div><div class="l">Present</div></div>
+          <div class="astat"><div class="n" id="sa" style="color:var(--rd)">0</div><div class="l">Absent</div></div>
+          <div class="astat"><div class="n" id="sl" style="color:var(--am)">0</div><div class="l">Late</div></div>
+          <div class="astat"><div class="n" id="spct">0%</div><div class="l">%</div></div>
+        </div>
+        <div class="agrid" id="att-grid"></div>
+      </div>
+      <div class="fab"><button class="btn bb" onclick="saveAtt()">☁ Attendance Save</button></div>
+    </div>
+
+    <!-- TERM EVALUATION -->
+    <div id="sec-te" class="sec">
+      <div class="note">📋 Term Evaluation — TE + CE Marks | TE max & CE max manual setting</div>
+      <div class="trow">
+        <div class="ttab active" onclick="setTETerm(1,this)">ടേം 1</div>
+        <div class="ttab" onclick="setTETerm(2,this)">ടേം 2</div>
+        <div class="ttab" onclick="setTETerm(3,this)">ടേം 3</div>
+      </div>
+      <div class="crow" id="te-chips"></div>
+      <div id="te-wrap"></div>
+      <div class="fab" style="gap:6px">
+        <button class="btn bb" style="flex:2" onclick="saveTEG()">☁ Save</button>
+        <button class="btn bo bsm" style="flex:1;font-size:10px" onclick="openTEActMgr()">+ Activity</button>
+        <button class="btn bgr bsm" style="flex:1;font-size:10px" onclick="openM('m-te-rep')">📄 PDF</button>
+      </div>
+    </div>
+
+    <!-- CLASS TEST -->
+    <div id="sec-ct" class="sec">
+      <div class="note am">📝 Class Test — Marks entry</div>
+      <div class="crow" id="ct-chips"></div>
+      <div id="ct-wrap"></div>
+      <div class="fab" style="gap:6px">
+        <button class="btn bb" style="flex:2" onclick="saveCTG()">☁ Save</button>
+        <button class="btn bam bsm" style="flex:1;font-size:10px" onclick="openCTActMgr()">+ Test</button>
+        <button class="btn bgr bsm" style="flex:1;font-size:10px" onclick="openM('m-ct-rep')">📄 PDF</button>
+      </div>
+    </div>
+
+    <!-- CLASS ACTIVITY -->
+    <div id="sec-ca" class="sec">
+      <div class="note gn">🏫 Class Activity — Completion + Remarks tracking</div>
+      <div class="crow" id="ca-chips"></div>
+      <div id="ca-wrap"></div>
+      <div class="fab" style="gap:6px">
+        <button class="btn bg2" style="flex:2" onclick="saveCAData()">☁ Save</button>
+        <button class="btn bsm" style="flex:1;font-size:10px;background:var(--gnl);color:var(--gn);border:1px solid var(--gn)" onclick="openCAActMgr()">+ Activity</button>
+        <button class="btn bgr bsm" style="flex:1;font-size:10px" onclick="openM('m-ca-rep')">📄 PDF</button>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div id="sec-rep" class="sec">
+      <div class="sgrid" id="rep-stats"></div>
+      <div class="card"><div class="ct">Term Eval Grade Chart</div><canvas id="te-chart"></canvas></div>
+      <div class="card"><div class="ct">Class Test Grade Chart</div><canvas id="ct-chart"></canvas></div>
+      <div class="card"><div class="ct">Class Activity Completion</div><canvas id="ca-chart"></canvas></div>
+      <div class="card"><div class="ct">Overall Performance</div><div id="perf-list"></div></div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button class="btn bb" style="flex:1" onclick="openM('m-te-rep')">📋 TE PDF</button>
+        <button class="btn bam" style="flex:1" onclick="openM('m-ct-rep')">📝 CT PDF</button>
+        <button class="btn bg2" style="flex:1" onclick="openM('m-ca-rep')">🏫 CA PDF</button>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div id="sec-stu" class="sec">
+      <div class="srch">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Name, Sl.No, Adm No, Father..." oninput="filterStu(this.value)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
+        <span style="font-size:12px;color:var(--gy);font-weight:600" id="stu-count"></span>
+        <div style="display:flex;gap:6px">
+          <button class="btn bgr bsm" onclick="openM('m-bulk-upload')" style="font-size:12px">📊 Bulk Upload</button>
+          <button class="btn bb bsm" onclick="openAddStu()" style="font-size:12px">+ Add</button>
+        </div>
+      </div>
+      <div id="stu-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="loader"><div class="spin"></div><div id="lmsg">Firebase connecting...</div></div>
+
+<!-- CLASS MANAGE -->
+<div class="ov" id="m-cls">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">🏫 Class / Division</div><button class="xbtn" onclick="closeM('m-cls')">×</button></div>
+    <div id="cls-list"></div>
+    <hr>
+    <div style="display:flex;gap:7px">
+      <input type="text" id="new-cls-inp" placeholder="eg: 9 A, 10 B" style="flex:1;border:1px solid var(--bd);border-radius:var(--rs);padding:8px 10px;font-size:13px;outline:none">
+      <button class="btn bb bsm" style="width:auto;padding:8px 14px" onclick="addClass()">+</button>
+    </div>
+  </div>
+</div>
+<div class="ov" id="m-cls-edit">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">Class Edit</div><button class="xbtn" onclick="closeM('m-cls-edit')">×</button></div>
+    <div class="fg"><label>Class / Division</label><input type="text" id="ecls-inp"></div>
+    <input type="hidden" id="ecls-old">
+    <div style="display:flex;gap:7px"><button class="btn bb" style="flex:1" onclick="saveEditClass()">✓ Save</button><button class="btn br" style="flex:1" onclick="deleteClass()">🗑 Delete</button></div>
+  </div>
+</div>
+
+<!-- GRADE RANGE -->
+<div class="ov" id="m-grade-range">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle" id="gr-title">Grade Range</div><button class="xbtn" onclick="closeM('m-grade-range')">×</button></div>
+    <div class="note" style="font-size:11px;margin-bottom:10px">Label | Min% | Max% | Color</div>
+    <div id="gr-list"></div>
+    <button class="btn bgr" style="margin-top:8px" onclick="addGRow()">+ Grade ചേർക്കുക</button>
+    <hr>
+    <button class="btn bb" onclick="saveGR()">✓ Save Grade Range</button>
+  </div>
+</div>
+
+<!-- TE ACTIVITY MANAGER -->
+<div class="ov" id="m-te-act">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">📋 TE Activity — ടേം <span id="te-term-lbl">1</span></div><button class="xbtn" onclick="closeM('m-te-act')">×</button></div>
+    <div class="fg"><label>Activity പേര്</label><input type="text" id="te-act-name" placeholder="eg: Term 1 Evaluation"></div>
+    <div class="r3">
+      <div class="fg"><label>TE Max Marks</label><input type="number" id="te-act-te-max" value="60" min="1"></div>
+      <div class="fg"><label>CE Max Marks</label><input type="number" id="te-act-ce-max" value="40" min="1"></div>
+      <div class="fg"><label>തീയതി</label><input type="date" id="te-act-date"></div>
+    </div>
+    <button class="btn bb" onclick="addTEAct()">+ TE Activity ചേർക്കുക</button>
+    <hr>
+    <div id="te-act-list"></div>
+    <hr>
+    <button class="btn bo" style="font-size:11px" onclick="openGR('te')">⚙ TE Grade Range Edit</button>
+  </div>
+</div>
+
+<!-- CLASS TEST MANAGER -->
+<div class="ov" id="m-ct-act">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">📝 Class Test</div><button class="xbtn" onclick="closeM('m-ct-act')">×</button></div>
+    <div class="fg"><label>Test പേര്</label><input type="text" id="ct-act-name" placeholder="eg: Unit Test 1"></div>
+    <div class="r2">
+      <div class="fg"><label>Max Marks</label><input type="number" id="ct-act-max" value="20" min="1"></div>
+      <div class="fg"><label>തീയതി</label><input type="date" id="ct-act-date"></div>
+    </div>
+    <button class="btn bam" onclick="addCTAct()">+ Class Test ചേർക്കുക</button>
+    <hr>
+    <div id="ct-act-list"></div>
+    <hr>
+    <button class="btn bo" style="font-size:11px" onclick="openGR('ct')">⚙ CT Grade Range Edit</button>
+  </div>
+</div>
+
+<!-- CA ACTIVITY MANAGER -->
+<div class="ov" id="m-ca-act">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">🏫 Class Activity</div><button class="xbtn" onclick="closeM('m-ca-act')">×</button></div>
+    <div class="fg"><label>Activity പേര്</label><input type="text" id="ca-act-name" placeholder="eg: Chapter 1 Project"></div>
+    <div class="r2">
+      <div class="fg"><label>തരം</label>
+        <select id="ca-act-type"><option>Assignment</option><option>Project</option><option>Home Work</option><option>Seminar</option><option>Other</option></select>
+      </div>
+      <div class="fg"><label>തീയതി</label><input type="date" id="ca-act-date"></div>
+    </div>
+    <div class="fg"><label>Description (optional)</label><textarea id="ca-act-desc" placeholder="Activity വിവരം"></textarea></div>
+    <div class="tog-wrap">
+      <label>Remarks ആവശ്യമുണ്ടോ?</label>
+      <label class="tog"><input type="checkbox" id="ca-needs-remark" checked><span class="tslider"></span></label>
+    </div>
+    <button class="btn bg2" onclick="addCAAct()">+ CA Activity ചേർക്കുക</button>
+    <hr>
+    <div id="ca-act-list"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT STUDENT -->
+<div class="ov" id="m-add-stu">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle" id="stu-modal-title">Student ചേർക്കുക</div><button class="xbtn" onclick="closeM('m-add-stu')">×</button></div>
+    <input type="hidden" id="stu-edit-id">
+
+    <div class="sec-label bl">👤 Student Info</div>
+    <div class="r2">
+      <div class="fg"><label>Serial No. (ക്രമ നം)</label><input type="number" id="ns-roll" placeholder="1, 2, 3..."></div>
+      <div class="fg"><label>Admission No.</label><input type="text" id="ns-adm" placeholder="Adm Number"></div>
+    </div>
+    <div class="fg"><label>Full Name (പൂർണ്ണ പേര്)</label><input type="text" id="ns-name" placeholder="Student Full Name"></div>
+    <div class="fg"><label>Gender</label>
+      <select id="ns-gender"><option value="M">Male (ആൺ)</option><option value="F">Female (പെൺ)</option></select>
+    </div>
+    <div class="fg"><label>Address (വിലാസം)</label><textarea id="ns-addr" placeholder="House, Street, Place..." style="min-height:50px"></textarea></div>
+    <div class="fg"><label>🌟 Skills / Talents (കഴിവുകൾ)</label><textarea id="ns-skills" placeholder="eg: Drawing, Singing, Football, Public Speaking, Recitation..." style="min-height:60px"></textarea></div>
+
+    <div class="sec-label gn" style="margin-top:4px">👨‍👩‍👧 Parent / Guardian Info</div>
+    <div class="r2">
+      <div class="fg"><label>Father's Name</label><input type="text" id="ns-father" placeholder="Father Name"></div>
+      <div class="fg"><label>Occupation</label><input type="text" id="ns-focc" placeholder="Job / Profession"></div>
+    </div>
+    <div class="r2">
+      <div class="fg"><label>Mother's Name</label><input type="text" id="ns-mother" placeholder="Mother Name"></div>
+      <div class="fg"><label>Occupation</label><input type="text" id="ns-mocc" placeholder="Job / Profession"></div>
+    </div>
+    <div class="r2">
+      <div class="fg"><label>Father Phone 📞</label><input type="tel" id="ns-fphone" placeholder="91XXXXXXXXXX"></div>
+      <div class="fg"><label>Mother Phone 📞</label><input type="tel" id="ns-mphone" placeholder="91XXXXXXXXXX"></div>
+    </div>
+    <div class="fg"><label>WhatsApp Number 📱</label><input type="tel" id="ns-waphone" placeholder="91XXXXXXXXXX (primary contact)"></div>
+
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn bb" id="stu-save-btn" onclick="saveStu()" style="flex:1">☁ Save</button>
+      <button class="btn br bsm" id="stu-del-btn" style="display:none;width:auto;padding:12px 16px" onclick="deleteStu()">🗑</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK UPLOAD MODAL -->
+<div class="ov" id="m-bulk-upload">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">📊 Bulk Student Upload</div><button class="xbtn" onclick="closeM('m-bulk-upload')">×</button></div>
+
+    <!-- Step 1: Download Template -->
+    <div style="background:var(--bll);border-radius:var(--rs);padding:12px;margin-bottom:12px;border-left:4px solid var(--bl)">
+      <div style="font-size:13px;font-weight:700;color:var(--bl);margin-bottom:6px">Step 1 — Template Download ചെയ്യുക</div>
+      <div style="font-size:12px;color:#174ea6;margin-bottom:8px">ഈ Excel template-ൽ student details fill ചെയ്യുക:</div>
+      <div style="font-size:11px;color:var(--gy);background:var(--wh);padding:8px 10px;border-radius:6px;margin-bottom:8px;font-family:monospace;line-height:1.8">
+        Sl.No | Adm.No | Name | Gender (M/F) | Address | Skills | Father Name | Father Occ | Mother Name | Mother Occ | Father Phone | Mother Phone | WA Phone
+      </div>
+      <button class="btn bb" onclick="downloadTemplate()" style="font-size:12px">⬇ Excel Template Download</button>
+    </div>
+
+    <!-- Step 2: Upload -->
+    <div style="background:var(--gnl);border-radius:var(--rs);padding:12px;margin-bottom:12px;border-left:4px solid var(--gn)">
+      <div style="font-size:13px;font-weight:700;color:var(--gn);margin-bottom:6px">Step 2 — File Upload ചെയ്യുക</div>
+      <div style="font-size:12px;color:#1e5c1e;margin-bottom:8px">Fill ചെയ്ത Excel/CSV file select ചെയ്യുക (.xlsx, .csv)</div>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--wh);border:2px dashed #34a853;border-radius:var(--rs);cursor:pointer">
+        <span style="font-size:22px">📂</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--gn)">File Select ചെയ്യുക</div>
+          <div style="font-size:11px;color:var(--gy)">.xlsx അല്ലെങ്കിൽ .csv format</div>
+        </div>
+        <input type="file" id="bulk-file" accept=".csv,.xlsx" style="display:none" onchange="previewBulk(this)">
+      </label>
+    </div>
+
+    <!-- Preview -->
+    <div id="bulk-preview" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px">📋 Preview (<span id="bulk-count">0</span> students)</div>
+      <div style="overflow-x:auto;max-height:200px;border:1px solid var(--bd);border-radius:var(--rs)">
+        <table class="gt" id="bulk-preview-table">
+          <thead><tr id="bulk-head"></tr></thead>
+          <tbody id="bulk-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn bg2" style="flex:1" onclick="importBulk()">☁ Cloud-ൽ Import ചെയ്യുക</button>
+        <button class="btn br bsm" style="width:auto" onclick="clearBulk()">✕ Clear</button>
+      </div>
+    </div>
+
+    <div id="bulk-error" style="display:none" class="note" style="background:var(--rdl);color:var(--rd);border-left-color:var(--rd)"></div>
+  </div>
+</div>
+
+<!-- STUDENT DETAIL -->
+<div class="ov" id="m-stu-det">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle" id="det-title"></div><button class="xbtn" onclick="closeM('m-stu-det')">×</button></div>
+    <div id="det-body"></div>
+    <hr>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <button class="btn bam" onclick="editStuDet()">✏ Edit / Delete</button>
+      <button class="btn bb" onclick="genStuPDF()">📄 PDF Report</button>
+      <button class="btn bw" onclick="shareWA()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp Share
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT MODALS -->
+<div class="ov" id="m-te-rep">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">📋 TE Report PDF</div><button class="xbtn" onclick="closeM('m-te-rep')">×</button></div>
+    <div class="note" style="font-size:11px"># · Adm · Name · TE Marks · TE% · TE Grade · CE Marks · CE% · CE Grade</div>
+    <div class="trow" style="margin-top:10px" id="te-rep-trow">
+      <div class="ttab active" onclick="setRepTerm('te',1,this)">ടേം 1</div>
+      <div class="ttab" onclick="setRepTerm('te',2,this)">ടേം 2</div>
+      <div class="ttab" onclick="setRepTerm('te',3,this)">ടേം 3</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">
+      <button class="btn bb" onclick="genTEPDF()">📄 PDF Download</button>
+      <button class="btn bw" onclick="shareTEWA()">WhatsApp Summary</button>
+    </div>
+  </div>
+</div>
+<div class="ov" id="m-ct-rep">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">📝 Class Test Report</div><button class="xbtn" onclick="closeM('m-ct-rep')">×</button></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px">
+      <button class="btn bam" onclick="genCTPDF()">📄 PDF Download</button>
+      <button class="btn bw" onclick="shareCTWA()">WhatsApp Summary</button>
+    </div>
+  </div>
+</div>
+<div class="ov" id="m-ca-rep">
+  <div class="modal">
+    <div class="mhdr"><div class="mtitle">🏫 Class Activity Report</div><button class="xbtn" onclick="closeM('m-ca-rep')">×</button></div>
+    <div class="note gn" style="font-size:11px"># · Adm · Name · Activity · Done/Pending · Remarks</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px">
+      <button class="btn bg2" onclick="genCAPDF()">📄 PDF Download</button>
+      <button class="btn bw" onclick="shareCAWA()">WhatsApp Summary</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs,deleteDoc,enableIndexedDbPersistence}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const fbApp=initializeApp({apiKey:"AIzaSyBqPbM3RKCGdTFhtgcl2AysxpJ49OQEHn0",authDomain:"classroom-manager-336a5.firebaseapp.com",projectId:"classroom-manager-336a5",storageBucket:"classroom-manager-336a5.firebasestorage.app",messagingSenderId:"965773987816",appId:"1:965773987816:web:8a2ec4ba6119689101de5d"});
+const db=getFirestore(fbApp);
+try{await enableIndexedDbPersistence(db);}catch(e){}
+
+// CA Remarks options
+const CA_REMARKS=[
+  {val:'Outstanding',label:'Outstanding',ml:'വളരെ മികച്ചത്',color:'#1e7e34'},
+  {val:'Excellent',label:'Excellent',ml:'മികച്ചത്',color:'#34a853'},
+  {val:'Satisfactory',label:'Satisfactory',ml:'ശരാശരി',color:'#1a73e8'},
+  {val:'Needs Improvement',label:'Needs Improvement',ml:'മെച്ചപ്പെടുത്തേണ്ടതുണ്ട്',color:'#b06000'},
+  {val:'Needs More Improvement',label:'Needs More Improvement',ml:'കൂടുതൽ മെച്ചപ്പെടുത്തേണ്ടതുണ്ട്',color:'#c5221f'}
+];
+
+// State
+let CLASSES=[],AC='',CurTab='att',ATerm=1,RepTETerm=1;
+let teAct=null,ctAct=null,caAct=null,curStu=null,caFilter='all',grFor='te';
+let teChI=null,ctChI=null,caChI=null;
+let attData={},attStus=[];
+let teActs=[],ctActs=[],caActs=[];
+let teGrades={},ctGrades={},caData={};
+let stuList=[];
+let teGR=[{label:'A+',min:90,max:100,color:'#1e7e34'},{label:'A',min:80,max:89,color:'#34a853'},{label:'B+',min:70,max:79,color:'#1a73e8'},{label:'B',min:60,max:69,color:'#4285f4'},{label:'C',min:50,max:59,color:'#b06000'},{label:'D',min:40,max:49,color:'#c5221f'},{label:'E',min:0,max:39,color:'#7d0c0c'}];
+let ctGR=[{label:'A+',min:90,max:100,color:'#1e7e34'},{label:'A',min:80,max:89,color:'#34a853'},{label:'B+',min:70,max:79,color:'#1a73e8'},{label:'B',min:60,max:69,color:'#4285f4'},{label:'C',min:50,max:59,color:'#b06000'},{label:'D',min:40,max:49,color:'#c5221f'},{label:'E',min:0,max:39,color:'#7d0c0c'}];
+
+// Firebase helpers
+const ck=c=>c.replace(/\s+/g,'_');
+async function fS(col,id,data){try{await setDoc(doc(db,col,id),data,{merge:true});syncOk();return true;}catch(e){syncErr(e);return false;}}
+async function fG(col,id){try{const s=await getDoc(doc(db,col,id));syncOk();return s.exists()?s.data():null;}catch(e){syncErr(e);return null;}}
+async function fGC(col){try{const s=await getDocs(collection(db,col));syncOk();const r={};s.forEach(d=>r[d.id]=d.data());return r;}catch(e){syncErr(e);return{};}}
+async function fD(col,id){try{await deleteDoc(doc(db,col,id));syncOk();return true;}catch(e){syncErr(e);return false;}}
+function syncOk(){const e=document.getElementById('sind');e.className='sb sb-ok';e.textContent='☁ Synced';}
+function syncErr(e){const el=document.getElementById('sind');el.className='sb sb-err';el.textContent='⚠ Offline';console.error(e?.code,e?.message);}
+
+// Utils
+function gFor(pct,range){for(const r of range)if(pct>=r.min&&pct<=r.max)return r;return range[range.length-1]||{label:'—',color:'#999'};}
+function gPill(label,color){return`<span class="gp" style="background:${color}22;color:${color};border:1px solid ${color}44">${label}</span>`;}
+function rPill(val){const r=CA_REMARKS.find(x=>x.val===val);return r?gPill(r.label,r.color):'—';}
+function toast(m,t='ok'){const el=document.getElementById('toast');el.textContent=m;el.style.background=t==='err'?'#c5221f':'#202124';el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',3000);}
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+window.openM=openM;window.closeM=closeM;
+function today(){return new Date().toISOString().slice(0,10);}
+function showL(m='Loading...'){document.getElementById('lmsg').innerHTML=m;document.getElementById('loader').style.display='flex';}
+function hideL(){document.getElementById('loader').style.display='none';}
+function fld(id){return document.getElementById(id);}
+function fldV(id,v=''){const el=fld(id);if(el)el.value=v;}
+
+// Class management
+async function loadCls(){const d=await fG('app_config','classes');if(d?.list?.length)CLASSES=d.list;else{CLASSES=['10 A','10 B','10 C'];await fS('app_config','classes',{list:CLASSES});}if(!AC||!CLASSES.includes(AC))AC=CLASSES[0];}
+function buildCls(){const r=fld('clsrow');r.innerHTML='';CLASSES.forEach(c=>{const b=document.createElement('button');b.className='cbtn'+(c===AC?' active':'');b.textContent=c;b.onclick=()=>{AC=c;buildCls();refresh();};r.appendChild(b);});}
+function renderClsList(){fld('cls-list').innerHTML=CLASSES.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg);border-radius:var(--rs);margin-bottom:5px"><span style="width:18px;font-size:11px;color:var(--gy)">${i+1}</span><span style="flex:1;font-size:13px;font-weight:600">${c}</span><button class="btn bo bsm" onclick="openEditCls('${c}')">✏</button></div>`).join('');}
+window.addClass=async function(){const v=fld('new-cls-inp').value.trim();if(!v)return;if(CLASSES.includes(v)){toast('ഈ class ഉണ്ട്','err');return;}CLASSES.push(v);showL();await fS('app_config','classes',{list:CLASSES});fld('new-cls-inp').value='';buildCls();renderClsList();hideL();toast(v+' ✓');}
+window.openEditCls=function(c){fld('ecls-inp').value=c;fld('ecls-old').value=c;openM('m-cls-edit');}
+window.saveEditClass=async function(){const o=fld('ecls-old').value,n=fld('ecls-inp').value.trim();if(!n||n===o){closeM('m-cls-edit');return;}const i=CLASSES.indexOf(o);CLASSES[i]=n;if(AC===o)AC=n;showL();await fS('app_config','classes',{list:CLASSES});buildCls();renderClsList();closeM('m-cls-edit');hideL();toast('Update ✓');}
+window.deleteClass=async function(){const c=fld('ecls-old').value;if(!confirm(`"${c}" delete?`))return;CLASSES=CLASSES.filter(x=>x!==c);if(!CLASSES.length)CLASSES=['Class 1'];if(!CLASSES.includes(AC))AC=CLASSES[0];showL();await fS('app_config','classes',{list:CLASSES});buildCls();renderClsList();closeM('m-cls-edit');closeM('m-cls');hideL();refresh();}
+
+// Grade range
+function openGR(type){grFor=type;fld('gr-title').textContent=(type==='te'?'📋 TE':'📝 CT')+' Grade Range';renderGRL(type==='te'?teGR:ctGR);openM('m-grade-range');}
+window.openGR=openGR;
+function renderGRL(range){fld('gr-list').innerHTML=range.map((r,i)=>`<div class="gritem"><input class="grl" id="grl-${i}" value="${r.label}" style="color:${r.color}"><input class="grp" type="number" id="grn-${i}" value="${r.min}"><span style="font-size:10px;color:var(--gy)">—</span><input class="grp" type="number" id="grx-${i}" value="${r.max}"><span style="font-size:9px;color:var(--gy)">%</span><input type="color" class="grc" id="grc-${i}" value="${r.color}"><button class="btn br bsm" style="width:auto;padding:3px 7px" onclick="delGRow(${i})">✕</button></div>`).join('');}
+window.addGRow=function(){(grFor==='te'?teGR:ctGR).push({label:'New',min:0,max:0,color:'#888'});renderGRL(grFor==='te'?teGR:ctGR);}
+window.delGRow=function(i){(grFor==='te'?teGR:ctGR).splice(i,1);renderGRL(grFor==='te'?teGR:ctGR);}
+window.saveGR=async function(){const r=grFor==='te'?teGR:ctGR;const n=r.length;const nr=[];for(let i=0;i<n;i++)nr.push({label:fld('grl-'+i).value.trim()||'?',min:parseFloat(fld('grn-'+i).value)||0,max:parseFloat(fld('grx-'+i).value)||0,color:fld('grc-'+i).value});if(grFor==='te')teGR=nr;else ctGR=nr;showL();await fS('app_config','grade_ranges',{te:teGR,ct:ctGR});hideL();closeM('m-grade-range');toast('Grade range saved ✓');if(CurTab==='te')renderTETable();if(CurTab==='ct')renderCTTable();}
+
+// Tab
+window.goTab=function(t,el){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach(s=>s.classList.remove('active'));fld('sec-'+t).classList.add('active');el.classList.add('active');CurTab=t;refresh();}
+function refresh(){if(CurTab==='att')initAtt();else if(CurTab==='te')initTE();else if(CurTab==='ct')initCT();else if(CurTab==='ca')initCA();else if(CurTab==='rep')initRep();else if(CurTab==='stu')initStu();}
+
+// Attendance
+async function initAtt(){const d=fld('att-date');if(!d.value)d.value=today();showL('ഹാജർ...');attStus=await getStuDB();const s=await fG('att_'+ck(AC),d.value);attData=s?{...s}:{};renderAttGrid();hideL();}
+function renderAttGrid(){const g=fld('att-grid');if(!attStus.length){g.innerHTML='<div class="note" style="grid-column:1/-1">Students tab-ൽ students ചേർക്കൂ.</div>';updAttSum();return;}g.innerHTML='';attStus.forEach(s=>{const st=attData[s.id]||'';const d=document.createElement('div');d.className='ai '+st;d.innerHTML=`<div class="aname">${s.name.split(' ')[0]}</div><div class="abadge">${st==='P'?'Present':st==='A'?'Absent':st==='L'?'Late':'—'}</div>`;d.onclick=()=>cycleAtt(s.id,d);g.appendChild(d);});updAttSum();}
+function cycleAtt(id,el){const c=attData[id]||'';const n=c===''?'P':c==='P'?'A':c==='A'?'L':'';attData[id]=n;el.className='ai '+n;el.querySelector('.abadge').textContent=n==='P'?'Present':n==='A'?'Absent':n==='L'?'Late':'—';updAttSum();}
+function updAttSum(){const v=Object.values(attData);const p=v.filter(x=>x==='P').length,a=v.filter(x=>x==='A').length,l=v.filter(x=>x==='L').length,t=attStus.length;fld('sp').textContent=p;fld('sa').textContent=a;fld('sl').textContent=l;fld('spct').textContent=t?Math.round((p+l)/t*100)+'%':'0%';}
+window.attChange=async function(){showL();const s=await fG('att_'+ck(AC),fld('att-date').value);attData=s?{...s}:{};renderAttGrid();hideL();}
+window.saveAtt=async function(){showL('Save...');const ok=await fS('att_'+ck(AC),fld('att-date').value,attData);hideL();toast(ok?'ഹാജർ save ✓':'Error','err');}
+
+// Term Evaluation
+async function initTE(){showL('TE...');const d=await fGC('te_acts_'+ck(AC));teActs=Object.values(d).sort((a,b)=>a.createdAt-b.createdAt);const g=await fG('te_grades_'+ck(AC),'data');teGrades=g?{...g}:{};renderTEChips();hideL();}
+function renderTEChips(){const row=fld('te-chips');row.innerHTML='';const ta=teActs.filter(a=>a.term===ATerm);if(!ta.length){row.innerHTML='<div class="note">ടേം '+ATerm+'-ൽ TE activity ഇല്ല.</div>';fld('te-wrap').innerHTML='';return;}if(!teAct||!ta.find(a=>a.id===teAct))teAct=ta[0].id;ta.forEach(a=>{const c=document.createElement('div');c.className='chip'+(teAct===a.id?' active':'');c.textContent=a.name;c.onclick=()=>{teAct=a.id;renderTETable();};row.appendChild(c);});renderTETable();}
+async function renderTETable(){const stus=await getStuDB();const ta=teActs.filter(a=>a.term===ATerm);const act=ta.find(a=>a.id===teAct)||ta[0];if(!act)return;
+fld('te-wrap').innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+  <span style="font-size:11px;font-weight:600;color:var(--bl)">${act.name}</span>
+  <button class="btn bo bsm" style="font-size:9px" onclick="openGR('te')">⚙ Grade Range</button>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:8px;padding:8px;background:var(--bll);border-radius:var(--rs)">
+  <div style="flex:1"><label style="font-size:10px;color:var(--gy);display:block;margin-bottom:3px">TE Maximum Marks</label><input type="number" id="te-max-live" value="${act.teMax}" min="1" style="width:100%;border:1px solid var(--bd);border-radius:5px;padding:4px 8px;font-size:13px;font-weight:600" onchange="updateTEMax('${act.id}',this.value,'te')"></div>
+  <div style="flex:1"><label style="font-size:10px;color:var(--gy);display:block;margin-bottom:3px">CE Maximum Marks</label><input type="number" id="ce-max-live" value="${act.ceMax}" min="1" style="width:100%;border:1px solid var(--bd);border-radius:5px;padding:4px 8px;font-size:13px;font-weight:600" onchange="updateTEMax('${act.id}',this.value,'ce')"></div>
+</div>
+<div class="card" style="padding:0;overflow-x:auto">
+<table class="gt">
+  <thead><tr><th>#</th><th>Adm</th><th>Name</th><th>TE<br><small style="font-weight:400">/${act.teMax}</small></th><th>TE%</th><th>TE Grade</th><th>CE<br><small style="font-weight:400">/${act.ceMax}</small></th><th>CE%</th><th>CE Grade</th></tr></thead>
+  <tbody>${stus.map((s,i)=>{const tk=`${s.id}_${act.id}_te`,ck2=`${s.id}_${act.id}_ce`;const tm=teGrades[tk]!==undefined?teGrades[tk]:'';const cm=teGrades[ck2]!==undefined?teGrades[ck2]:'';const tp=tm!==''?Math.round(tm/act.teMax*100):null;const cp=cm!==''?Math.round(cm/act.ceMax*100):null;const tg=tp!==null?gFor(tp,teGR):null;const cg=cp!==null?gFor(cp,teGR):null;return`<tr><td style="color:var(--gy)">${i+1}</td><td style="font-size:9px;color:var(--gy)">${s.admNo||'—'}</td><td style="font-weight:600;font-size:10px;text-align:left">${s.name}</td><td><input type="number" min="0" max="${act.teMax}" value="${tm}" placeholder="—" onchange="storeTEG('${s.id}','${act.id}','te',this.value)"></td><td style="font-size:9px">${tp!==null?tp+'%':'—'}</td><td>${tg?gPill(tg.label,tg.color):'—'}</td><td><input type="number" min="0" max="${act.ceMax}" value="${cm}" placeholder="—" onchange="storeTEG('${s.id}','${act.id}','ce',this.value)"></td><td style="font-size:9px">${cp!==null?cp+'%':'—'}</td><td>${cg?gPill(cg.label,cg.color):'—'}</td></tr>`;}).join('')}
+  </tbody>
+</table>
+</div>`;}
+
+window.updateTEMax=async function(actId,val,type){const act=teActs.find(a=>a.id===actId);if(!act)return;if(type==='te')act.teMax=parseInt(val)||60;else act.ceMax=parseInt(val)||40;await fS('te_acts_'+ck(AC),actId,act);renderTETable();}
+window.storeTEG=function(sid,actId,type,val){teGrades[`${sid}_${actId}_${type}`]=parseFloat(val);}
+window.setTETerm=function(t,el){ATerm=t;document.querySelectorAll('#sec-te .ttab').forEach(x=>x.classList.remove('active'));el.classList.add('active');teAct=null;renderTEChips();}
+window.saveTEG=async function(){showL('Save...');const ok=await fS('te_grades_'+ck(AC),'data',teGrades);hideL();toast(ok?'TE grades save ✓':'Error','err');}
+window.openTEActMgr=function(){fld('te-term-lbl').textContent=ATerm;fld('te-act-date').value=today();renderTEActList();openM('m-te-act');}
+function renderTEActList(){const ta=teActs.filter(a=>a.term===ATerm);fld('te-act-list').innerHTML=ta.length?ta.map(a=>`<div class="aci"><div class="acicon" style="background:var(--bll)">📋</div><div class="acinfo"><div class="acname">${a.name}</div><div class="acmeta">TE max:${a.teMax} | CE max:${a.ceMax} · ${a.date}</div></div><button class="btn br bsm" onclick="delTEAct('${a.id}')">🗑</button></div>`).join(''):'<div class="note">TE activities ഇല്ല.</div>';}
+window.addTEAct=async function(){const name=fld('te-act-name').value.trim();if(!name){toast('പേര് നൽകൂ','err');return;}const act={id:'te_'+Date.now(),name,teMax:parseInt(fld('te-act-te-max').value)||60,ceMax:parseInt(fld('te-act-ce-max').value)||40,date:fld('te-act-date').value||today(),term:ATerm,createdAt:Date.now()};showL();const ok=await fS('te_acts_'+ck(AC),act.id,act);if(ok){teActs.push(act);fld('te-act-name').value='';renderTEActList();renderTEChips();toast('TE Activity ✓');}hideL();}
+window.delTEAct=async function(id){if(!confirm('Delete?'))return;showL();await fD('te_acts_'+ck(AC),id);teActs=teActs.filter(a=>a.id!==id);renderTEActList();renderTEChips();hideL();}
+
+// Class Test
+async function initCT(){showL('CT...');const d=await fGC('ct_acts_'+ck(AC));ctActs=Object.values(d).sort((a,b)=>a.createdAt-b.createdAt);const g=await fG('ct_grades_'+ck(AC),'data');ctGrades=g?{...g}:{};renderCTChips();hideL();}
+function renderCTChips(){const row=fld('ct-chips');row.innerHTML='';if(!ctActs.length){row.innerHTML='<div class="note am">Class Test ഇല്ല. "+Test" click ചെയ്ത് ചേർക്കൂ.</div>';fld('ct-wrap').innerHTML='';return;}if(!ctAct||!ctActs.find(a=>a.id===ctAct))ctAct=ctActs[0].id;ctActs.forEach(a=>{const c=document.createElement('div');c.className='chip'+(ctAct===a.id?' active':'');c.textContent=a.name;c.onclick=()=>{ctAct=a.id;renderCTTable();};row.appendChild(c);});renderCTTable();}
+async function renderCTTable(){const stus=await getStuDB();const act=ctActs.find(a=>a.id===ctAct)||ctActs[0];if(!act)return;fld('ct-wrap').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11px;font-weight:600;color:var(--am)">${act.name} · Max: <input type="number" value="${act.max}" min="1" style="width:50px;border:1px solid var(--bd);border-radius:4px;padding:2px 5px;font-size:12px" onchange="updateCTMax('${act.id}',this.value)"></span><button class="btn bam bsm" style="font-size:9px" onclick="openGR('ct')">⚙ Grade</button></div><div class="card" style="padding:0;overflow-x:auto"><table class="gt"><thead><tr><th>#</th><th>Adm</th><th>Name</th><th>Marks</th><th>%</th><th>Grade</th></tr></thead><tbody>${stus.map((s,i)=>{const mk=ctGrades[`${s.id}_${act.id}`];const mv=mk!==undefined?mk:'';const pct=mk!==undefined?Math.round(mk/act.max*100):null;const gr=pct!==null?gFor(pct,ctGR):null;return`<tr><td style="color:var(--gy)">${i+1}</td><td style="font-size:9px;color:var(--gy)">${s.admNo||'—'}</td><td style="font-weight:600;font-size:10px;text-align:left">${s.name}</td><td><input type="number" min="0" max="${act.max}" value="${mv}" placeholder="—" onchange="storeCTG('${s.id}','${act.id}',this.value)"></td><td style="font-size:9px">${pct!==null?pct+'%':'—'}</td><td>${gr?gPill(gr.label,gr.color):'—'}</td></tr>`;}).join('')}</tbody></table></div>`;}
+window.updateCTMax=async function(actId,val){const act=ctActs.find(a=>a.id===actId);if(!act)return;act.max=parseInt(val)||20;await fS('ct_acts_'+ck(AC),actId,act);renderCTTable();}
+window.storeCTG=function(sid,actId,val){ctGrades[`${sid}_${actId}`]=parseFloat(val);}
+window.saveCTG=async function(){showL('Save...');const ok=await fS('ct_grades_'+ck(AC),'data',ctGrades);hideL();toast(ok?'Class Test save ✓':'Error','err');}
+window.openCTActMgr=function(){fld('ct-act-date').value=today();renderCTActList();openM('m-ct-act');}
+function renderCTActList(){fld('ct-act-list').innerHTML=ctActs.length?ctActs.map(a=>`<div class="aci"><div class="acicon" style="background:var(--aml)">📝</div><div class="acinfo"><div class="acname">${a.name}</div><div class="acmeta">Max:${a.max} · ${a.date}</div></div><button class="btn br bsm" onclick="delCTAct('${a.id}')">🗑</button></div>`).join(''):'<div class="note am">Class Test ഇല്ല.</div>';}
+window.addCTAct=async function(){const name=fld('ct-act-name').value.trim();if(!name){toast('പേര് നൽകൂ','err');return;}const act={id:'ct_'+Date.now(),name,max:parseInt(fld('ct-act-max').value)||20,date:fld('ct-act-date').value||today(),createdAt:Date.now()};showL();const ok=await fS('ct_acts_'+ck(AC),act.id,act);if(ok){ctActs.push(act);fld('ct-act-name').value='';renderCTActList();renderCTChips();toast('Class Test ✓');}hideL();}
+window.delCTAct=async function(id){if(!confirm('Delete?'))return;showL();await fD('ct_acts_'+ck(AC),id);ctActs=ctActs.filter(a=>a.id!==id);renderCTActList();renderCTChips();hideL();}
+
+// Class Activity
+async function initCA(){showL('CA...');const d=await fGC('ca_acts_'+ck(AC));caActs=Object.values(d).sort((a,b)=>a.createdAt-b.createdAt);const g=await fG('ca_data_'+ck(AC),'data');caData=g?{...g}:{};renderCAChips();hideL();}
+function renderCAChips(){const row=fld('ca-chips');row.innerHTML='';if(!caActs.length){row.innerHTML='<div class="note gn">CA activity ഇല്ല. "+Activity" ചേർക്കൂ.</div>';fld('ca-wrap').innerHTML='';return;}if(!caAct||!caActs.find(a=>a.id===caAct))caAct=caActs[0].id;caActs.forEach(a=>{const c=document.createElement('div');c.className='chip gn'+(caAct===a.id?' active':'');c.textContent=a.name;c.onclick=()=>{caAct=a.id;renderCATable('all');};row.appendChild(c);});renderCATable('all');}
+
+async function renderCATable(filter){
+  caFilter=filter||caFilter;
+  const stus=await getStuDB();
+  const act=caActs.find(a=>a.id===caAct)||caActs[0];
+  if(!act)return;
+  const doneList=stus.filter(s=>caData[`${s.id}_${act.id}_done`]===true);
+  const pendList=stus.filter(s=>!caData[`${s.id}_${act.id}_done`]);
+  const showList=caFilter==='done'?doneList:caFilter==='pend'?pendList:stus;
+
+  const remarkOpts=CA_REMARKS.map(r=>`<option value="${r.val}">${r.label}</option>`).join('');
+
+  fld('ca-wrap').innerHTML=`
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+  <span style="font-size:11px;font-weight:600;color:var(--gn)">${act.name} · ${act.type}</span>
+  ${act.needsRemark?'<span style="font-size:9px;background:var(--gnl);color:var(--gn);padding:2px 7px;border-radius:9px">Remarks ON</span>':'<span style="font-size:9px;background:var(--bg);color:var(--gy);padding:2px 7px;border-radius:9px">No Remarks</span>'}
+</div>
+${act.desc?`<div style="font-size:11px;color:var(--gy);margin-bottom:8px;padding:6px 8px;background:var(--bg);border-radius:var(--rs)">${act.desc}</div>`:''}
+<div class="sf-row">
+  <div class="sfbtn a${caFilter==='all'?' on':''}" onclick="renderCATable('all')">All (${stus.length})</div>
+  <div class="sfbtn d${caFilter==='done'?' on':''}" onclick="renderCATable('done')">✅ Done (${doneList.length})</div>
+  <div class="sfbtn p${caFilter==='pend'?' on':''}" onclick="renderCATable('pend')">⏳ Pending (${pendList.length})</div>
+</div>
+${showList.map(s=>{
+  const done=caData[`${s.id}_${act.id}_done`]===true;
+  const remark=caData[`${s.id}_${act.id}_remark`]||'';
+  return`<div class="card" style="padding:9px 10px;margin-bottom:6px;border-left:4px solid ${done?'#34a853':'#ea4335'}">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="cmp-tick${done?' done':''}" onclick="toggleDone('${s.id}','${act.id}')">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${s.name}</div>
+        <div style="font-size:10px;color:var(--gy)">Roll:${s.roll} · Adm:${s.admNo||'—'}</div>
+      </div>
+      <span style="font-size:10px;font-weight:600;color:${done?'#34a853':'#ea4335'}">${done?'Done':'Pending'}</span>
+    </div>
+    ${done&&act.needsRemark?`<div style="margin-top:8px">
+      <select onchange="storeCAR('${s.id}','${act.id}',this.value)" style="width:100%;border:1px solid var(--bd);border-radius:var(--rs);padding:6px 8px;font-size:12px;background:var(--wh)">
+        <option value="">-- Remark select ചെയ്യൂ --</option>
+        ${CA_REMARKS.map(r=>`<option value="${r.val}" ${remark===r.val?'selected':''}>${r.label} (${r.ml})</option>`).join('')}
+      </select>
+      ${remark?`<div style="margin-top:4px">${rPill(remark)}</div>`:''}
+    </div>`:''}
+  </div>`;
+}).join('')}`;
+}
+
+window.toggleDone=async function(sid,actId){const key=`${sid}_${actId}_done`;caData[key]=!caData[key];await fS('ca_data_'+ck(AC),'data',caData);renderCATable(caFilter);}
+window.storeCAR=function(sid,actId,val){caData[`${sid}_${actId}_remark`]=val;}
+window.saveCAData=async function(){showL('Save...');const ok=await fS('ca_data_'+ck(AC),'data',caData);hideL();toast(ok?'CA save ✓':'Error','err');}
+window.openCAActMgr=function(){fld('ca-act-date').value=today();fld('ca-needs-remark').checked=true;renderCAActList();openM('m-ca-act');}
+function renderCAActList(){fld('ca-act-list').innerHTML=caActs.length?caActs.map(a=>{const dc=Object.keys(caData).filter(k=>k.endsWith(`_${a.id}_done`)&&caData[k]).length;return`<div class="aci"><div class="acicon" style="background:var(--gnl)">${a.type==='Assignment'?'📄':a.type==='Project'?'🔬':a.type==='Home Work'?'🏠':'📋'}</div><div class="acinfo"><div class="acname">${a.name}</div><div class="acmeta">${a.type} · ${a.date} · ${a.needsRemark?'Remarks ON':'No Remarks'} · Done:${dc}</div></div><button class="btn br bsm" onclick="delCAAct('${a.id}')">🗑</button></div>`;}).join(''):'<div class="note gn">CA activities ഇല്ല.</div>';}
+window.addCAAct=async function(){const name=fld('ca-act-name').value.trim();if(!name){toast('പേര് നൽകൂ','err');return;}const act={id:'ca_'+Date.now(),name,type:fld('ca-act-type').value,desc:fld('ca-act-desc').value.trim(),needsRemark:fld('ca-needs-remark').checked,date:fld('ca-act-date').value||today(),createdAt:Date.now()};showL();const ok=await fS('ca_acts_'+ck(AC),act.id,act);if(ok){caActs.push(act);fld('ca-act-name').value='';fld('ca-act-desc').value='';renderCAActList();renderCAChips();toast('CA Activity ✓');}hideL();}
+window.delCAAct=async function(id){if(!confirm('Delete?'))return;showL();await fD('ca_acts_'+ck(AC),id);caActs=caActs.filter(a=>a.id!==id);renderCAActList();renderCAChips();hideL();}
+
+// Report
+async function initRep(){
+  showL('Reports...');
+  const stus=await getStuDB();
+  const tad=await fGC('te_acts_'+ck(AC));const tA=Object.values(tad);
+  const ctd=await fGC('ct_acts_'+ck(AC));const ctA=Object.values(ctd);
+  const cad=await fGC('ca_acts_'+ck(AC));const caA=Object.values(cad);
+  const tg=await fG('te_grades_'+ck(AC),'data')||{};
+  const cg=await fG('ct_grades_'+ck(AC),'data')||{};
+  const cd=await fG('ca_data_'+ck(AC),'data')||{};
+  const teGC={},ctGC={};
+  teGR.forEach(r=>teGC[r.label]=0);ctGR.forEach(r=>ctGC[r.label]=0);
+  let caDone=0,caPend=0;
+  stus.forEach(s=>{
+    let ts=0,tc=0;tA.forEach(a=>{const tm=tg[`${s.id}_${a.id}_te`],cm=tg[`${s.id}_${a.id}_ce`];if(tm!==undefined){ts+=tm/a.teMax*100;tc++;}if(cm!==undefined){ts+=cm/a.ceMax*100;tc++;}});
+    if(tc){const g=gFor(Math.round(ts/tc),teGR);if(teGC[g.label]!==undefined)teGC[g.label]++;}
+    let cs=0,cc=0;ctA.forEach(a=>{const m=cg[`${s.id}_${a.id}`];if(m!==undefined){cs+=m/a.max*100;cc++;}});
+    if(cc){const g=gFor(Math.round(cs/cc),ctGR);if(ctGC[g.label]!==undefined)ctGC[g.label]++;}
+  });
+  caA.forEach(a=>stus.forEach(s=>{if(cd[`${s.id}_${a.id}_done`])caDone++;else caPend++;}));
+  fld('rep-stats').innerHTML=`
+    <div class="sbox"><div class="big">${stus.length}</div><div class="sm">കുട്ടികൾ</div></div>
+    <div class="sbox"><div class="big">${tA.length}</div><div class="sm">TE Activities</div></div>
+    <div class="sbox"><div class="big">${ctA.length}</div><div class="sm">Class Tests</div></div>
+    <div class="sbox"><div class="big" style="color:var(--gn)">${caA.length}</div><div class="sm">CA Activities</div></div>`;
+  setTimeout(()=>{
+    const tc=fld('te-chart')?.getContext('2d');if(tc){if(teChI)teChI.destroy();teChI=new Chart(tc,{type:'bar',data:{labels:Object.keys(teGC),datasets:[{data:Object.values(teGC),backgroundColor:teGR.map(r=>r.color+'99'),borderColor:teGR.map(r=>r.color),borderWidth:1,borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});}
+    const cc=fld('ct-chart')?.getContext('2d');if(cc){if(ctChI)ctChI.destroy();ctChI=new Chart(cc,{type:'bar',data:{labels:Object.keys(ctGC),datasets:[{data:Object.values(ctGC),backgroundColor:ctGR.map(r=>r.color+'99'),borderColor:ctGR.map(r=>r.color),borderWidth:1,borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});}
+    const ac=fld('ca-chart')?.getContext('2d');if(ac){if(caChI)caChI.destroy();caChI=new Chart(ac,{type:'doughnut',data:{labels:['Done ✅','Pending ⏳'],datasets:[{data:[caDone,caPend],backgroundColor:['#34a85399','#ea433599'],borderColor:['#34a853','#ea4335'],borderWidth:2}]},options:{plugins:{legend:{position:'bottom'}}}});}
+  },150);
+  fld('perf-list').innerHTML=stus.map(s=>{
+    let ts=0,tc=0;tA.forEach(a=>{const tm=tg[`${s.id}_${a.id}_te`],cm=tg[`${s.id}_${a.id}_ce`];if(tm!==undefined){ts+=tm/a.teMax*100;tc++;}if(cm!==undefined){ts+=cm/a.ceMax*100;tc++;}});
+    let cs=0,cc=0;ctA.forEach(a=>{const m=cg[`${s.id}_${a.id}`];if(m!==undefined){cs+=m/a.max*100;cc++;}});
+    const ta=tc?Math.round(ts/tc):0,ca=cc?Math.round(cs/cc):0;
+    const tg2=tc?gFor(ta,teGR):{label:'—',color:'#999'};const cg2=cc?gFor(ca,ctGR):{label:'—',color:'#999'};
+    return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:7px 8px;background:var(--bg);border-radius:var(--rs)">
+      <div class="av">${s.name.slice(0,2).toUpperCase()}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:600">${s.name}</div>
+        <div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap">
+          <span style="font-size:9px">TE:</span>${gPill(tg2.label,tg2.color)}<span style="font-size:9px;color:var(--gy)">${ta}%</span>
+          <span style="font-size:9px;margin-left:3px">CT:</span>${gPill(cg2.label,cg2.color)}<span style="font-size:9px;color:var(--gy)">${ca}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  hideL();
+}
+
+// Students
+async function getStuDB(){const d=await fGC('stus_'+ck(AC));return Object.values(d).sort((a,b)=>a.roll-b.roll);}
+async function initStu(){showL();stuList=await getStuDB();filterStu('');hideL();}
+window.filterStu=function(q){
+  const ql=q.toLowerCase();
+  const f=stuList.filter(s=>s.name.toLowerCase().includes(ql)||String(s.roll).includes(q)||(s.admNo||'').includes(q)||(s.father||'').toLowerCase().includes(ql)||(s.mother||'').toLowerCase().includes(ql)||(s.skills||'').toLowerCase().includes(ql));
+  fld('stu-count').textContent=f.length+' Students';
+  fld('stu-list').innerHTML=f.map(s=>`<div class="sc" onclick="showStuDet('${s.id}')">
+    <div class="av">${s.name.slice(0,2).toUpperCase()}</div>
+    <div style="flex:1">
+      <div style="font-size:14px;font-weight:700">${s.name}</div>
+      <div style="font-size:12px;color:var(--gy);margin-top:2px">Sl.No: ${s.roll} · Adm: ${s.admNo||'—'} · ${s.gender==='M'?'ആൺ':'പെൺ'}</div>
+      <div style="font-size:12px;color:var(--gy)">${s.father?'👨 '+s.father:''} ${s.fphone?'📞 '+s.fphone:''}</div>
+      ${s.skills?`<div style="font-size:11px;color:var(--am);margin-top:2px">🌟 ${s.skills.slice(0,50)}${s.skills.length>50?'...':''}</div>`:''}
+    </div>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>`).join('');
+}
+
+window.openAddStu=function(){
+  fld('stu-modal-title').textContent='Student ചേർക്കുക';
+  fld('stu-edit-id').value='';
+  ['ns-name','ns-roll','ns-adm','ns-addr','ns-skills','ns-father','ns-focc','ns-mother','ns-mocc','ns-fphone','ns-mphone','ns-waphone'].forEach(id=>{const el=fld(id);if(el)el.value='';});
+  fld('ns-gender').value='M';
+  fld('stu-save-btn').textContent='☁ Save';
+  fld('stu-del-btn').style.display='none';
+  openM('m-add-stu');
+}
+
+window.editStuDet=function(){
+  const s=stuList.find(x=>x.id===curStu);if(!s)return;
+  fld('stu-modal-title').textContent='✏ Edit: '+s.name;
+  fld('stu-edit-id').value=s.id;
+  fld('ns-name').value=s.name||'';
+  fld('ns-roll').value=s.roll||'';
+  fld('ns-adm').value=s.admNo||'';
+  fld('ns-gender').value=s.gender||'M';
+  fld('ns-addr').value=s.addr||'';
+  fld('ns-skills').value=s.skills||'';
+  fld('ns-father').value=s.father||'';
+  fld('ns-focc').value=s.focc||'';
+  fld('ns-mother').value=s.mother||'';
+  fld('ns-mocc').value=s.mocc||'';
+  fld('ns-fphone').value=s.fphone||'';
+  fld('ns-mphone').value=s.mphone||'';
+  fld('ns-waphone').value=s.waphone||'';
+  fld('stu-save-btn').textContent='✓ Update';
+  fld('stu-del-btn').style.display='flex';
+  closeM('m-stu-det');openM('m-add-stu');
+}
+
+window.saveStu=async function(){
+  const name=fld('ns-name').value.trim();if(!name){toast('Name നൽകൂ','err');return;}
+  const eid=fld('stu-edit-id').value;
+  const s={
+    id:eid||'stu_'+Date.now(),
+    name,
+    roll:parseInt(fld('ns-roll').value)||stuList.length+1,
+    admNo:fld('ns-adm').value.trim(),
+    gender:fld('ns-gender').value,
+    addr:fld('ns-addr').value.trim(),
+    skills:fld('ns-skills').value.trim(),
+    father:fld('ns-father').value.trim(),
+    focc:fld('ns-focc').value.trim(),
+    mother:fld('ns-mother').value.trim(),
+    mocc:fld('ns-mocc').value.trim(),
+    fphone:fld('ns-fphone').value.replace(/\D/g,''),
+    mphone:fld('ns-mphone').value.replace(/\D/g,''),
+    waphone:fld('ns-waphone').value.replace(/\D/g,''),
+    createdAt:eid?undefined:Date.now()
+  };
+  if(!s.createdAt)delete s.createdAt;
+  showL('Saving...');
+  const ok=await fS('stus_'+ck(AC),s.id,s);
+  if(ok){stuList=await getStuDB();closeM('m-add-stu');filterStu('');toast(eid?name+' Updated ✓':name+' Added ✓');}
+  hideL();
+}
+
+window.deleteStu=async function(){
+  const id=fld('stu-edit-id').value;const s=stuList.find(x=>x.id===id);
+  if(!s||!confirm(`"${s.name}" delete ചെയ്യണോ?`))return;
+  showL();await fD('stus_'+ck(AC),id);stuList=stuList.filter(x=>x.id!==id);closeM('m-add-stu');filterStu('');hideL();toast(s.name+' deleted');
+}
+
+window.showStuDet=async function(id){
+  curStu=id;const s=stuList.find(x=>x.id===id);if(!s)return;
+  showL('Loading student data...');
+  const tad=await fGC('te_acts_'+ck(AC));const tA=Object.values(tad).sort((a,b)=>a.createdAt-b.createdAt);
+  const ctd=await fGC('ct_acts_'+ck(AC));const ctA=Object.values(ctd).sort((a,b)=>a.createdAt-b.createdAt);
+  const cad=await fGC('ca_acts_'+ck(AC));const caA=Object.values(cad).sort((a,b)=>a.createdAt-b.createdAt);
+  const tg=await fG('te_grades_'+ck(AC),'data')||{};
+  const cg=await fG('ct_grades_'+ck(AC),'data')||{};
+  const cd=await fG('ca_data_'+ck(AC),'data')||{};
+  // Collect all att dates for this student
+  const allAttCols=await fGC('att_'+ck(AC));
+  const attDates=Object.keys(allAttCols).sort();
+  let attP=0,attA=0,attL=0;
+  attDates.forEach(d=>{const v=(allAttCols[d]||{})[id]||'';if(v==='P')attP++;else if(v==='A')attA++;else if(v==='L')attL++;});
+  const attTotal=attP+attA+attL;
+  const attPct=attTotal?Math.round((attP+attL)/attTotal*100):0;
+
+  // TE stats
+  let teRows='',teTs=0,teTc=0;
+  tA.forEach(a=>{const tm=tg[`${id}_${a.id}_te`],cm=tg[`${id}_${a.id}_ce`];if(tm!==undefined||cm!==undefined){const tp=tm!==undefined?Math.round(tm/a.teMax*100):null;const cp=cm!==undefined?Math.round(cm/a.ceMax*100):null;if(tp!==null){teTs+=tp;teTc++;}if(cp!==null){teTs+=cp;teTc++;}teRows+=`<tr><td style="text-align:left;font-size:10px">${a.name}</td><td>T${a.term}</td><td>${tp!==null?gPill(gFor(tp,teGR).label,gFor(tp,teGR).color)+' <small>'+tm+'/'+a.teMax+'('+tp+'%)</small>':'—'}</td><td>${cp!==null?gPill(gFor(cp,teGR).label,gFor(cp,teGR).color)+' <small>'+cm+'/'+a.ceMax+'('+cp+'%)</small>':'—'}</td></tr>`;}});
+  const teAvg=teTc?Math.round(teTs/teTc):0;
+
+  // CT stats
+  let ctRows='',ctTs=0,ctTc=0;
+  ctA.forEach(a=>{const m=cg[`${id}_${a.id}`];if(m!==undefined){const pct=Math.round(m/a.max*100);ctTs+=pct;ctTc++;ctRows+=`<tr><td style="text-align:left;font-size:10px">${a.name}</td><td>${m}/${a.max}</td><td>${pct}%</td><td>${gPill(gFor(pct,ctGR).label,gFor(pct,ctGR).color)}</td></tr>`;}});
+  const ctAvg=ctTc?Math.round(ctTs/ctTc):0;
+
+  // CA stats
+  let caRows='',caDone=0,caPend=0;
+  caA.forEach(a=>{const done=cd[`${id}_${a.id}_done`]===true;const remark=cd[`${id}_${a.id}_remark`]||'';if(done)caDone++;else caPend++;caRows+=`<tr><td style="text-align:left;font-size:10px">${a.name}</td><td>${done?'<span style="color:#34a853;font-weight:700">✅ Done</span>':'<span style="color:#ea4335">⏳ Pending</span>'}</td><td>${remark?rPill(remark):'—'}</td></tr>`;});
+  const caPct=caA.length?Math.round(caDone/caA.length*100):0;
+
+  fld('det-title').textContent=s.name;
+  fld('det-body').innerHTML=`
+<!-- Student Info -->
+<div style="background:var(--bg);border-radius:var(--rs);padding:12px;margin-bottom:12px;border:1px solid var(--bd)">
+  <div class="info-grid">
+    <div class="info-item"><span class="lbl">Serial No.</span><div>${s.roll}</div></div>
+    <div class="info-item"><span class="lbl">Admission No.</span><div>${s.admNo||'—'}</div></div>
+    <div class="info-item"><span class="lbl">Gender</span><div>${s.gender==='M'?'Male (ആൺ)':'Female (പെൺ)'}</div></div>
+    <div class="info-item full"><span class="lbl">Address</span><div>${s.addr||'—'}</div></div>
+    ${s.skills?`<div class="info-item full"><span class="lbl">🌟 Skills / Talents</span><div style="color:var(--am);font-weight:600">${s.skills}</div></div>`:''}
+  </div>
+  <hr>
+  <div class="info-grid">
+    <div class="info-item"><span class="lbl">Father</span><div>${s.father||'—'}${s.focc?' <span style="color:var(--gy);font-size:11px">('+s.focc+')</span>':''}</div></div>
+    <div class="info-item"><span class="lbl">Father Phone</span><div><a href="tel:${s.fphone}" style="color:var(--bl);font-weight:600">${s.fphone||'—'}</a></div></div>
+    <div class="info-item"><span class="lbl">Mother</span><div>${s.mother||'—'}${s.mocc?' <span style="color:var(--gy);font-size:11px">('+s.mocc+')</span>':''}</div></div>
+    <div class="info-item"><span class="lbl">Mother Phone</span><div><a href="tel:${s.mphone}" style="color:var(--bl);font-weight:600">${s.mphone||'—'}</a></div></div>
+    ${s.waphone?`<div class="info-item full"><span class="lbl">WhatsApp 📱</span><div><a href="https://wa.me/${s.waphone}" target="_blank" style="color:#25d366;font-weight:700">${s.waphone}</a></div></div>`:''}
+  </div>
+</div>
+
+<!-- Numeric Summary Cards -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
+  <div style="background:${attPct>=75?'var(--gnl)':attPct>=50?'var(--bll)':'var(--rdl)'};border-radius:var(--rs);padding:10px;text-align:center;border:1px solid ${attPct>=75?'#34a853':attPct>=50?'var(--bl)':'#ea4335'}">
+    <div style="font-size:24px;font-weight:700;color:${attPct>=75?'var(--gn)':attPct>=50?'var(--bl)':'var(--rd)'}">${attPct}%</div>
+    <div style="font-size:10px;color:var(--gy);margin-top:2px">Attendance</div>
+    <div style="font-size:10px;color:var(--gy)">P:${attP} A:${attA} L:${attL} / ${attTotal} days</div>
+  </div>
+  <div style="background:var(--bll);border-radius:var(--rs);padding:10px;text-align:center;border:1px solid var(--bl)">
+    <div style="font-size:24px;font-weight:700;color:var(--bl)">${teAvg}%</div>
+    <div style="font-size:10px;color:var(--gy);margin-top:2px">Term Eval Avg</div>
+    <div style="font-size:10px;color:var(--gy)">${teTc} entries</div>
+  </div>
+  <div style="background:var(--aml);border-radius:var(--rs);padding:10px;text-align:center;border:1px solid #fbbc04">
+    <div style="font-size:24px;font-weight:700;color:var(--am)">${ctAvg}%</div>
+    <div style="font-size:10px;color:var(--gy);margin-top:2px">Class Test Avg</div>
+    <div style="font-size:10px;color:var(--gy)">${ctTc} tests</div>
+  </div>
+  <div style="background:var(--gnl);border-radius:var(--rs);padding:10px;text-align:center;border:1px solid #34a853">
+    <div style="font-size:24px;font-weight:700;color:var(--gn)">${caPct}%</div>
+    <div style="font-size:10px;color:var(--gy);margin-top:2px">Activity Done</div>
+    <div style="font-size:10px;color:var(--gy)">${caDone}/${caA.length} activities</div>
+  </div>
+</div>
+
+<!-- Performance Graph -->
+<div style="background:var(--wh);border:1px solid var(--bd);border-radius:var(--rs);padding:10px;margin-bottom:10px">
+  <div style="font-size:11px;font-weight:700;color:var(--gy);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📊 Performance Overview</div>
+  <canvas id="stu-radar-chart" style="max-height:200px"></canvas>
+</div>
+
+<!-- Attendance Bar -->
+<div style="background:var(--wh);border:1px solid var(--bd);border-radius:var(--rs);padding:10px;margin-bottom:10px">
+  <div style="font-size:11px;font-weight:700;color:var(--gy);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📅 Attendance Breakdown</div>
+  <canvas id="stu-att-chart" style="max-height:140px"></canvas>
+</div>
+
+<!-- TE Details -->
+${teRows?`<div style="font-size:11px;font-weight:700;color:var(--bl);margin:10px 0 5px">📋 Term Evaluation</div><div style="overflow-x:auto;margin-bottom:10px"><table class="gt"><thead><tr><th style="text-align:left">Activity</th><th>ടേം</th><th>TE Score</th><th>CE Score</th></tr></thead><tbody>${teRows}</tbody></table></div>`:''}
+<!-- CT Details -->
+${ctRows?`<div style="font-size:11px;font-weight:700;color:var(--am);margin:10px 0 5px">📝 Class Test</div><div style="overflow-x:auto;margin-bottom:10px"><table class="gt"><thead><tr><th style="text-align:left">Test</th><th>Marks</th><th>%</th><th>Grade</th></tr></thead><tbody>${ctRows}</tbody></table></div>`:''}
+<!-- CA Details -->
+${caRows?`<div style="font-size:11px;font-weight:700;color:var(--gn);margin:10px 0 5px">🏫 Class Activity</div><div style="overflow-x:auto"><table class="gt"><thead><tr><th style="text-align:left">Activity</th><th>Status</th><th>Remark</th></tr></thead><tbody>${caRows}</tbody></table></div>`:''}
+`;
+  hideL();openM('m-stu-det');
+  // Draw charts after modal opens
+  setTimeout(()=>{
+    // Radar / Bar — Performance Overview
+    const rCtx=document.getElementById('stu-radar-chart')?.getContext('2d');
+    if(rCtx){
+      new Chart(rCtx,{type:'bar',data:{
+        labels:['Attendance','Term Eval','Class Test','CA Done'],
+        datasets:[{
+          label:'Score %',
+          data:[attPct,teAvg,ctAvg,caPct],
+          backgroundColor:['rgba(52,168,83,.3)','rgba(26,115,232,.3)','rgba(176,96,0,.3)','rgba(30,126,52,.3)'],
+          borderColor:['#34a853','#1a73e8','#b06000','#1e7e34'],
+          borderWidth:2,borderRadius:6
+        }]
+      },options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}});
+    }
+    // Attendance doughnut
+    const aCtx=document.getElementById('stu-att-chart')?.getContext('2d');
+    if(aCtx&&attTotal>0){
+      new Chart(aCtx,{type:'doughnut',data:{
+        labels:['Present','Absent','Late'],
+        datasets:[{data:[attP,attA,attL],backgroundColor:['#34a85399','#ea433599','#fbbc0499'],borderColor:['#34a853','#ea4335','#fbbc04'],borderWidth:2}]
+      },options:{plugins:{legend:{position:'bottom'}}}});
+    }else if(aCtx){aCtx.canvas.parentElement.innerHTML='<div class="note" style="margin:0">Attendance data ഇല്ല.</div>';}
+  },200);
+}
+
+// WhatsApp
+window.shareWA=async function(){
+  const s=stuList.find(x=>x.id===curStu);if(!s)return;
+  const tad=await fGC('te_acts_'+ck(AC));const tA=Object.values(tad);
+  const ctd=await fGC('ct_acts_'+ck(AC));const ctA=Object.values(ctd);
+  const cad=await fGC('ca_acts_'+ck(AC));const caA=Object.values(cad);
+  const tg=await fG('te_grades_'+ck(AC),'data')||{};
+  const cg=await fG('ct_grades_'+ck(AC),'data')||{};
+  const cd=await fG('ca_data_'+ck(AC),'data')||{};
+  let teL='',ctL='',caL='';
+  tA.forEach(a=>{const tm=tg[`${curStu}_${a.id}_te`],cm=tg[`${curStu}_${a.id}_ce`];if(tm!==undefined)teL+=`• ${a.name} T${a.term}: TE ${tm}/${a.teMax}(${gFor(Math.round(tm/a.teMax*100),teGR).label}) CE ${cm!==undefined?cm+'/'+a.ceMax+'('+gFor(Math.round(cm/a.ceMax*100),teGR).label+')':'—'}\n`;});
+  ctA.forEach(a=>{const m=cg[`${curStu}_${a.id}`];if(m!==undefined)ctL+=`• ${a.name}: ${m}/${a.max} (${gFor(Math.round(m/a.max*100),ctGR).label})\n`;});
+  caA.forEach(a=>{const done=cd[`${curStu}_${a.id}_done`]===true;const remark=cd[`${curStu}_${a.id}_remark`]||'';caL+=`• ${a.name}: ${done?'✅ Done':'⏳ Pending'}${remark?' — '+remark:''}\n`;});
+  const msg=`📊 *Student Report*\n━━━━━━━━━━━━\n👤 *${s.name}*\n🏫 ${AC} | Roll:${s.roll} | Adm:${s.admNo||'—'}\n👨 ${s.father||'—'}${s.focc?' ('+s.focc+')':''}\n👩 ${s.mother||'—'}${s.mocc?' ('+s.mocc+')':''}\n━━━━━━━━━━━━\n📋 *TE:*\n${teL||'—'}\n📝 *Class Test:*\n${ctL||'—'}\n🏫 *CA:*\n${caL||'—'}\n━━━━━━━━━━━━\n_ക്ലാസ് മാനേജർ App_`;
+  const phone=s.waphone||s.fphone||s.mphone||'';
+  const phone=s.waphone||s.fphone||s.mphone||'';
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+window.setRepTerm=function(type,t,el){if(type==='te')RepTETerm=t;const p=el.closest('.trow');p.querySelectorAll('.ttab').forEach(x=>x.classList.remove('active'));el.classList.add('active');}
+
+// PDF functions
+window.genTEPDF=async function(){
+  showL('TE PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const stus=await getStuDB();
+    const tad=await fGC('te_acts_'+ck(AC));const acts=Object.values(tad).filter(a=>a.term===RepTETerm).sort((a,b)=>a.createdAt-b.createdAt);
+    const tg=await fG('te_grades_'+ck(AC),'data')||{};
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=297,M=10;
+    doc.setFillColor(26,115,232);doc.rect(0,0,W,26,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text('TERM EVALUATION REPORT',W/2,11,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Class: ${AC}  |  Term: ${RepTETerm}  |  ${new Date().toLocaleDateString('en-IN')}`,W/2,20,{align:'center'});
+    const head=[['#','Adm','Name',...acts.flatMap(a=>[`TE\n(/${a.teMax})`,`TE%`,`TE Gr`,`CE\n(/${a.ceMax})`,`CE%`,`CE Gr`]),'Obs']];
+    const body=stus.map((s,i)=>{const row=[i+1,s.admNo||'—',s.name];acts.forEach(a=>{const tm=tg[`${s.id}_${a.id}_te`],cm=tg[`${s.id}_${a.id}_ce`];const tp=tm!==undefined?Math.round(tm/a.teMax*100):null;const cp=cm!==undefined?Math.round(cm/a.ceMax*100):null;row.push(tm!==undefined?tm:'—',tp!==null?tp+'%':'—',tp!==null?gFor(tp,teGR).label:'—',cm!==undefined?cm:'—',cp!==null?cp+'%':'—',cp!==null?gFor(cp,teGR).label:'—');});const la=acts[acts.length-1];row.push(la?tg[`${s.id}_${la.id}_obs`]||'—':'—');return row;});
+    doc.autoTable({startY:30,head,body,theme:'grid',headStyles:{fillColor:[26,115,232],textColor:255,fontSize:6,halign:'center',valign:'middle'},bodyStyles:{fontSize:7,halign:'center',valign:'middle'},columnStyles:{2:{halign:'left',fontStyle:'bold',cellWidth:38}},alternateRowStyles:{fillColor:[240,244,255]},margin:{left:M,right:M},styles:{cellPadding:2}});
+    doc.save(`TE_${AC.replace(/\s/g,'')}_T${RepTETerm}_${today()}.pdf`);toast('TE PDF ✓');
+  }catch(e){toast('PDF Error','err');console.error(e);}hideL();closeM('m-te-rep');
+}
+
+window.genCTPDF=async function(){
+  showL('CT PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const stus=await getStuDB();
+    const ctd=await fGC('ct_acts_'+ck(AC));const acts=Object.values(ctd).sort((a,b)=>a.createdAt-b.createdAt);
+    const cg=await fG('ct_grades_'+ck(AC),'data')||{};
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=297,M=10;
+    doc.setFillColor(176,96,0);doc.rect(0,0,W,26,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text('CLASS TEST REPORT',W/2,11,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Class: ${AC}  |  ${new Date().toLocaleDateString('en-IN')}`,W/2,20,{align:'center'});
+    const head=[['#','Adm','Name',...acts.flatMap(a=>[`${a.name}\n(/${a.max})`,`%`,`Grade`])]];
+    const body=stus.map((s,i)=>{const row=[i+1,s.admNo||'—',s.name];acts.forEach(a=>{const m=cg[`${s.id}_${a.id}`];const pct=m!==undefined?Math.round(m/a.max*100):null;row.push(m!==undefined?m:'—',pct!==null?pct+'%':'—',pct!==null?gFor(pct,ctGR).label:'—');});return row;});
+    doc.autoTable({startY:30,head,body,theme:'grid',headStyles:{fillColor:[176,96,0],textColor:255,fontSize:6,halign:'center',valign:'middle'},bodyStyles:{fontSize:7,halign:'center',valign:'middle'},columnStyles:{2:{halign:'left',fontStyle:'bold',cellWidth:38}},alternateRowStyles:{fillColor:[254,247,224]},margin:{left:M,right:M},styles:{cellPadding:2}});
+    doc.save(`CT_${AC.replace(/\s/g,'')}_${today()}.pdf`);toast('CT PDF ✓');
+  }catch(e){toast('PDF Error','err');console.error(e);}hideL();closeM('m-ct-rep');
+}
+
+window.genCAPDF=async function(){
+  showL('CA PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const stus=await getStuDB();
+    const cad=await fGC('ca_acts_'+ck(AC));const acts=Object.values(cad).sort((a,b)=>a.createdAt-b.createdAt);
+    const cd=await fG('ca_data_'+ck(AC),'data')||{};
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=297,M=10;
+    doc.setFillColor(30,126,52);doc.rect(0,0,W,26,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text('CLASS ACTIVITY REPORT',W/2,11,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Class: ${AC}  |  ${new Date().toLocaleDateString('en-IN')}`,W/2,20,{align:'center'});
+    const head=[['#','Adm','Name',...acts.flatMap(a=>[`${a.name}\nDone?`,`Remark`])]];
+    const body=stus.map((s,i)=>{const row=[i+1,s.admNo||'—',s.name];acts.forEach(a=>{const done=cd[`${s.id}_${a.id}_done`]===true;const remark=cd[`${s.id}_${a.id}_remark`]||'—';row.push(done?'✅ Done':'⏳ Pending',a.needsRemark?remark:'N/A');});return row;});
+    doc.autoTable({startY:30,head,body,theme:'grid',headStyles:{fillColor:[30,126,52],textColor:255,fontSize:6,halign:'center',valign:'middle'},bodyStyles:{fontSize:7,halign:'center',valign:'middle'},columnStyles:{2:{halign:'left',fontStyle:'bold',cellWidth:38}},alternateRowStyles:{fillColor:[230,244,230]},margin:{left:M,right:M},styles:{cellPadding:2}});
+    doc.save(`CA_${AC.replace(/\s/g,'')}_${today()}.pdf`);toast('CA PDF ✓');
+  }catch(e){toast('PDF Error','err');console.error(e);}hideL();closeM('m-ca-rep');
+}
+
+window.genStuPDF=async function(){
+  showL('PDF...');
+  try{
+    const{jsPDF}=window.jspdf;const s=stuList.find(x=>x.id===curStu);if(!s)return;
+    const tad=await fGC('te_acts_'+ck(AC));const tA=Object.values(tad).sort((a,b)=>a.createdAt-b.createdAt);
+    const ctd=await fGC('ct_acts_'+ck(AC));const ctA=Object.values(ctd).sort((a,b)=>a.createdAt-b.createdAt);
+    const cad=await fGC('ca_acts_'+ck(AC));const caA=Object.values(cad).sort((a,b)=>a.createdAt-b.createdAt);
+    const tg=await fG('te_grades_'+ck(AC),'data')||{};const cg=await fG('ct_grades_'+ck(AC),'data')||{};const cd=await fG('ca_data_'+ck(AC),'data')||{};
+    const doc=new jsPDF({unit:'mm',format:'a4'});const W=210,M=15;
+    doc.setFillColor(26,115,232);doc.rect(0,0,W,28,'F');doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text('STUDENT REPORT',W/2,12,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text('ക്ലാസ് മാനേജർ · '+new Date().toLocaleDateString('en-IN'),W/2,21,{align:'center'});
+    doc.setFillColor(232,240,254);doc.roundedRect(M,32,W-2*M,34,3,3,'F');doc.setTextColor(30,30,30);doc.setFontSize(12);doc.setFont('helvetica','bold');doc.text(s.name,M+5,42);doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.text(`Class: ${AC}  |  Roll: ${s.roll}  |  Adm: ${s.admNo||'—'}  |  ${s.gender==='M'?'Male':'Female'}`,M+5,50);
+    doc.text(`Father: ${s.father||'—'} ${s.focc?'('+s.focc+')':''}  Ph: ${s.fphone||'—'}`,M+5,57);
+    doc.text(`Mother: ${s.mother||'—'} ${s.mocc?'('+s.mocc+')':''}  Ph: ${s.mphone||'—'}`,M+5,63);
+    const teH=[['Activity','Term','TE','TE%','TE Gr','CE','CE%','CE Gr']];const teB=[];
+    tA.forEach(a=>{const tm=tg[`${curStu}_${a.id}_te`],cm=tg[`${curStu}_${a.id}_ce`];if(tm!==undefined||cm!==undefined){const tp=tm!==undefined?Math.round(tm/a.teMax*100):null;const cp=cm!==undefined?Math.round(cm/a.ceMax*100):null;teB.push([a.name,`T${a.term}`,tm!==undefined?tm:'—',tp!==null?tp+'%':'—',tp!==null?gFor(tp,teGR).label:'—',cm!==undefined?cm:'—',cp!==null?cp+'%':'—',cp!==null?gFor(cp,teGR).label:'—']);}});
+    if(teB.length){doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(26,115,232);doc.text('Term Evaluation',M,73);doc.autoTable({startY:76,head:teH,body:teB,theme:'grid',headStyles:{fillColor:[26,115,232],textColor:255,fontSize:7,halign:'center'},bodyStyles:{fontSize:7,halign:'center'},columnStyles:{0:{halign:'left'}},margin:{left:M,right:M},styles:{cellPadding:2}});}
+    const ctH=[['Test','Marks','%','Grade']];const ctB=[];ctA.forEach(a=>{const m=cg[`${curStu}_${a.id}`];if(m!==undefined){const pct=Math.round(m/a.max*100);ctB.push([a.name,m+'/'+a.max,pct+'%',gFor(pct,ctGR).label]);}});
+    if(ctB.length){let y=doc.lastAutoTable?.finalY||73;y+=5;doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(176,96,0);doc.text('Class Test',M,y);doc.autoTable({startY:y+3,head:ctH,body:ctB,theme:'grid',headStyles:{fillColor:[176,96,0],textColor:255,fontSize:7,halign:'center'},bodyStyles:{fontSize:7,halign:'center'},columnStyles:{0:{halign:'left'}},margin:{left:M,right:M},styles:{cellPadding:2}});}
+    const caH=[['Activity','Status','Remark']];const caB=[];caA.forEach(a=>{const done=cd[`${curStu}_${a.id}_done`]===true;const remark=cd[`${curStu}_${a.id}_remark`]||'—';caB.push([a.name,done?'Done':'Pending',a.needsRemark?remark:'N/A']);});
+    if(caB.length){let y2=doc.lastAutoTable?.finalY||73;y2+=5;doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(30,126,52);doc.text('Class Activity',M,y2);doc.autoTable({startY:y2+3,head:caH,body:caB,theme:'grid',headStyles:{fillColor:[30,126,52],textColor:255,fontSize:7,halign:'center'},bodyStyles:{fontSize:7,halign:'center'},columnStyles:{0:{halign:'left'}},margin:{left:M,right:M},styles:{cellPadding:2}});}
+    doc.setFillColor(26,115,232);doc.rect(0,278,W,19,'F');doc.setTextColor(255,255,255);doc.setFontSize(7);doc.text('ക്ലാസ് മാനേജർ App',W/2,287,{align:'center'});
+    doc.save(`${s.name.replace(/\s/g,'_')}_${AC.replace(/\s/g,'')}.pdf`);toast('PDF ✓');
+  }catch(e){toast('PDF Error: '+e.message,'err');console.error(e);}hideL();
+}
+
+window.shareTEWA=async function(){const stus=await getStuDB();const tad=await fGC('te_acts_'+ck(AC));const acts=Object.values(tad).filter(a=>a.term===RepTETerm);const tg=await fG('te_grades_'+ck(AC),'data')||{};const gC={};teGR.forEach(r=>gC[r.label]=0);stus.forEach(s=>{let ts=0,tc=0;acts.forEach(a=>{const tm=tg[`${s.id}_${a.id}_te`],cm=tg[`${s.id}_${a.id}_ce`];if(tm!==undefined){ts+=tm/a.teMax*100;tc++;}if(cm!==undefined){ts+=cm/a.ceMax*100;tc++;}});if(tc){const g=gFor(Math.round(ts/tc),teGR);if(gC[g.label]!==undefined)gC[g.label]++;}});const msg=`📋 *TE Summary T${RepTETerm}*\n🏫 ${AC}\n${Object.entries(gC).map(([g,n])=>`${g}:${n}`).join(' | ')}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-te-rep');}
+window.shareCTWA=async function(){const stus=await getStuDB();const ctd=await fGC('ct_acts_'+ck(AC));const acts=Object.values(ctd);const cg=await fG('ct_grades_'+ck(AC),'data')||{};const gC={};ctGR.forEach(r=>gC[r.label]=0);stus.forEach(s=>{let cs=0,cc=0;acts.forEach(a=>{const m=cg[`${s.id}_${a.id}`];if(m!==undefined){cs+=m/a.max*100;cc++;}});if(cc){const g=gFor(Math.round(cs/cc),ctGR);if(gC[g.label]!==undefined)gC[g.label]++;}});const msg=`📝 *CT Summary*\n🏫 ${AC}\n${Object.entries(gC).map(([g,n])=>`${g}:${n}`).join(' | ')}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-ct-rep');}
+window.shareCAWA=async function(){const stus=await getStuDB();const cad=await fGC('ca_acts_'+ck(AC));const acts=Object.values(cad);const cd=await fG('ca_data_'+ck(AC),'data')||{};let done=0,pend=0;stus.forEach(s=>{acts.forEach(a=>{if(cd[`${s.id}_${a.id}_done`])done++;else pend++;});});const msg=`🏫 *CA Summary*\n🏫 ${AC}\n✅ Done:${done} | ⏳ Pending:${pend}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-ca-rep');}
+
+// ── BULK UPLOAD ────────────────────────────────────────
+// Columns: Sl.No | Adm.No | Name | Gender(M/F) | Address | Skills | Father | FatherOcc | Mother | MotherOcc | FatherPhone | MotherPhone | WAPhone
+const BCOLS=['Sl.No','Adm.No','Name','Gender (M/F)','Address','Skills','Father Name','Father Occ','Mother Name','Mother Occ','Father Phone','Mother Phone','WA Phone'];
+let bulkRows=[];
+
+window.downloadTemplate=function(){
+  // Build CSV
+  const sample=['1','ADM001','Student Name','M','House No, Street, Place','Drawing, Singing','Father Name','Teacher','Mother Name','Homemaker','919876543210','919876543211','919876543210'];
+  const csv=[BCOLS.join(','),sample.join(',')].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='student_template.csv';a.click();URL.revokeObjectURL(url);
+  toast('Template downloaded ✓');
+}
+
+window.previewBulk=function(input){
+  const file=input.files[0];if(!file)return;
+  const errEl=fld('bulk-error');errEl.style.display='none';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const text=e.target.result;
+      const lines=text.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length<2){errEl.textContent='File empty or invalid';errEl.style.display='block';return;}
+      // Detect header row — skip if first cell looks like a column name
+      const firstCell=lines[0].split(',')[0].trim();
+      const startRow=isNaN(firstCell)&&firstCell!==''?1:0;
+      bulkRows=[];
+      for(let i=startRow;i<lines.length;i++){
+        const cols=lines[i].split(',').map(c=>c.replace(/^"|"$/g,'').trim());
+        if(!cols[2])continue; // skip rows without name
+        bulkRows.push({
+          roll:parseInt(cols[0])||i,
+          admNo:cols[1]||'',
+          name:cols[2]||'',
+          gender:cols[3]?.toUpperCase()==='F'?'F':'M',
+          addr:cols[4]||'',
+          skills:cols[5]||'',
+          father:cols[6]||'',
+          focc:cols[7]||'',
+          mother:cols[8]||'',
+          mocc:cols[9]||'',
+          fphone:(cols[10]||'').replace(/\D/g,''),
+          mphone:(cols[11]||'').replace(/\D/g,''),
+          waphone:(cols[12]||'').replace(/\D/g,''),
+        });
+      }
+      if(!bulkRows.length){errEl.textContent='Valid student rows കാണുന്നില്ല';errEl.style.display='block';return;}
+      // Show preview
+      fld('bulk-count').textContent=bulkRows.length;
+      fld('bulk-head').innerHTML=`<th>#</th><th>Sl.No</th><th>Adm.No</th><th>Name</th><th>Gender</th><th>Father</th><th>Skills</th>`;
+      fld('bulk-body').innerHTML=bulkRows.slice(0,10).map((r,i)=>`<tr><td>${i+1}</td><td>${r.roll}</td><td>${r.admNo||'—'}</td><td style="font-weight:600">${r.name}</td><td>${r.gender==='M'?'M':'F'}</td><td>${r.father||'—'}</td><td style="max-width:80px;overflow:hidden;white-space:nowrap">${r.skills||'—'}</td></tr>`).join('');
+      if(bulkRows.length>10)fld('bulk-body').innerHTML+=`<tr><td colspan="7" style="color:var(--gy);font-style:italic;text-align:center">...and ${bulkRows.length-10} more students</td></tr>`;
+      fld('bulk-preview').style.display='block';
+    }catch(err){errEl.textContent='File read error: '+err.message;errEl.style.display='block';}
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+window.importBulk=async function(){
+  if(!bulkRows.length)return;
+  if(!confirm(`${bulkRows.length} students-നെ "${AC}"-ൽ import ചെയ്യണോ?`))return;
+  showL(`Importing ${bulkRows.length} students...`);
+  let success=0,fail=0;
+  for(const r of bulkRows){
+    const stu={...r,id:'stu_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),createdAt:Date.now()};
+    const ok=await fS('stus_'+ck(AC),stu.id,stu);
+    if(ok)success++;else fail++;
+    await new Promise(res=>setTimeout(res,80)); // small delay
+  }
+  stuList=await getStuDB();filterStu('');clearBulk();closeM('m-bulk-upload');
+  hideL();toast(`${success} students imported ✓${fail?` | ${fail} failed`:''}`,fail?'err':'ok');
+}
+
+window.clearBulk=function(){
+  bulkRows=[];fld('bulk-preview').style.display='none';
+  fld('bulk-file').value='';fld('bulk-error').style.display='none';
+}
+
+// Init
+fld('att-date').value=today();fld('te-act-date').value=today();fld('ct-act-date').value=today();fld('ca-act-date').value=today();
+showL('Firebase connecting...');
+try{
+  const gr=await fG('app_config','grade_ranges');if(gr){if(gr.te)teGR=gr.te;if(gr.ct)ctGR=gr.ct;}
+  await loadCls();buildCls();await initAtt();syncOk();toast('☁ Connected ✓');
+}catch(e){syncErr(e);toast('⚠ Firestore Rules check ചെയ്യൂ','err');}
+hideL();
+</script>
+</body>
+</html>
