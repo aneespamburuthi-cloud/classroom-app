@@ -306,6 +306,20 @@ hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
         <button class="btn bam" style="flex:1" onclick="openM('m-ct-rep')">📝 CT PDF</button>
         <button class="btn bg2" style="flex:1" onclick="openM('m-ca-rep')">🏫 CA PDF</button>
       </div>
+      <hr>
+      <!-- CSV Export -->
+      <div style="background:var(--gnl);border-radius:var(--rs);padding:12px;border:1px solid #34a853;margin-top:4px">
+        <div style="font-size:13px;font-weight:700;color:var(--gn);margin-bottom:10px">📊 Google Sheets-ലേക്ക് Export (CSV)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn bg2" onclick="exportCSV('students')">👥 Students List Export</button>
+          <button class="btn bg2" onclick="exportCSV('attendance')">📅 Attendance Export</button>
+          <button class="btn bg2" onclick="exportCSV('te')">📋 Term Evaluation Export</button>
+          <button class="btn bg2" onclick="exportCSV('ct')">📝 Class Test Export</button>
+          <button class="btn bg2" onclick="exportCSV('ca')">🏫 Class Activity Export</button>
+          <button class="btn bb" onclick="exportCSV('all')">⬇ All Data Export (Full)</button>
+        </div>
+        <div style="font-size:11px;color:var(--gn);margin-top:8px;line-height:1.5">💡 CSV download ആകും → Google Sheets-ൽ File → Import → Upload ചെയ്യൂ</div>
+      </div>
     </div>
 
     <!-- STUDENTS -->
@@ -562,10 +576,17 @@ hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import{getFirestore,doc,setDoc,getDoc,collection,getDocs,deleteDoc,enableIndexedDbPersistence}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-const fbApp=initializeApp({apiKey:"AIzaSyBqPbM3RKCGdTFhtgcl2AysxpJ49OQEHn0",authDomain:"classroom-manager-336a5.firebaseapp.com",projectId:"classroom-manager-336a5",storageBucket:"classroom-manager-336a5.firebasestorage.app",messagingSenderId:"965773987816",appId:"1:965773987816:web:8a2ec4ba6119689101de5d"});
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs,deleteDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const fbApp=initializeApp({
+  apiKey:"AIzaSyBqPbM3RKCGdTFhtgcl2AysxpJ49OQEHn0",
+  authDomain:"classroom-manager-336a5.firebaseapp.com",
+  projectId:"classroom-manager-336a5",
+  storageBucket:"classroom-manager-336a5.firebasestorage.app",
+  messagingSenderId:"965773987816",
+  appId:"1:965773987816:web:8a2ec4ba6119689101de5d"
+});
 const db=getFirestore(fbApp);
-try{await enableIndexedDbPersistence(db);}catch(e){}
 
 // CA Remarks options
 const CA_REMARKS=[
@@ -1009,9 +1030,8 @@ window.shareWA=async function(){
   ctA.forEach(a=>{const m=cg[`${curStu}_${a.id}`];if(m!==undefined)ctL+=`• ${a.name}: ${m}/${a.max} (${gFor(Math.round(m/a.max*100),ctGR).label})\n`;});
   caA.forEach(a=>{const done=cd[`${curStu}_${a.id}_done`]===true;const remark=cd[`${curStu}_${a.id}_remark`]||'';caL+=`• ${a.name}: ${done?'✅ Done':'⏳ Pending'}${remark?' — '+remark:''}\n`;});
   const msg=`📊 *Student Report*\n━━━━━━━━━━━━\n👤 *${s.name}*\n🏫 ${AC} | Roll:${s.roll} | Adm:${s.admNo||'—'}\n👨 ${s.father||'—'}${s.focc?' ('+s.focc+')':''}\n👩 ${s.mother||'—'}${s.mocc?' ('+s.mocc+')':''}\n━━━━━━━━━━━━\n📋 *TE:*\n${teL||'—'}\n📝 *Class Test:*\n${ctL||'—'}\n🏫 *CA:*\n${caL||'—'}\n━━━━━━━━━━━━\n_ക്ലാസ് മാനേജർ App_`;
-  const phone=s.waphone||s.fphone||s.mphone||'';
-  const phone=s.waphone||s.fphone||s.mphone||'';
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+  const waPhone=s.waphone||s.fphone||s.mphone||'';
+  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 window.setRepTerm=function(type,t,el){if(type==='te')RepTETerm=t;const p=el.closest('.trow');p.querySelectorAll('.ttab').forEach(x=>x.classList.remove('active'));el.classList.add('active');}
 
@@ -1090,6 +1110,140 @@ window.genStuPDF=async function(){
 window.shareTEWA=async function(){const stus=await getStuDB();const tad=await fGC('te_acts_'+ck(AC));const acts=Object.values(tad).filter(a=>a.term===RepTETerm);const tg=await fG('te_grades_'+ck(AC),'data')||{};const gC={};teGR.forEach(r=>gC[r.label]=0);stus.forEach(s=>{let ts=0,tc=0;acts.forEach(a=>{const tm=tg[`${s.id}_${a.id}_te`],cm=tg[`${s.id}_${a.id}_ce`];if(tm!==undefined){ts+=tm/a.teMax*100;tc++;}if(cm!==undefined){ts+=cm/a.ceMax*100;tc++;}});if(tc){const g=gFor(Math.round(ts/tc),teGR);if(gC[g.label]!==undefined)gC[g.label]++;}});const msg=`📋 *TE Summary T${RepTETerm}*\n🏫 ${AC}\n${Object.entries(gC).map(([g,n])=>`${g}:${n}`).join(' | ')}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-te-rep');}
 window.shareCTWA=async function(){const stus=await getStuDB();const ctd=await fGC('ct_acts_'+ck(AC));const acts=Object.values(ctd);const cg=await fG('ct_grades_'+ck(AC),'data')||{};const gC={};ctGR.forEach(r=>gC[r.label]=0);stus.forEach(s=>{let cs=0,cc=0;acts.forEach(a=>{const m=cg[`${s.id}_${a.id}`];if(m!==undefined){cs+=m/a.max*100;cc++;}});if(cc){const g=gFor(Math.round(cs/cc),ctGR);if(gC[g.label]!==undefined)gC[g.label]++;}});const msg=`📝 *CT Summary*\n🏫 ${AC}\n${Object.entries(gC).map(([g,n])=>`${g}:${n}`).join(' | ')}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-ct-rep');}
 window.shareCAWA=async function(){const stus=await getStuDB();const cad=await fGC('ca_acts_'+ck(AC));const acts=Object.values(cad);const cd=await fG('ca_data_'+ck(AC),'data')||{};let done=0,pend=0;stus.forEach(s=>{acts.forEach(a=>{if(cd[`${s.id}_${a.id}_done`])done++;else pend++;});});const msg=`🏫 *CA Summary*\n🏫 ${AC}\n✅ Done:${done} | ⏳ Pending:${pend}\n_ക്ലാസ് മാനേജർ_`;window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');closeM('m-ca-rep');}
+
+// ── CSV EXPORT ─────────────────────────────────────────
+function downloadCSV(filename, csvContent){
+  const BOM='\uFEFF'; // UTF-8 BOM for Excel/Sheets compatibility
+  const blob=new Blob([BOM+csvContent],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function escCSV(val){
+  if(val===null||val===undefined)return'';
+  const s=String(val);
+  if(s.includes(',')||s.includes('"')||s.includes('\n'))return'"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+
+window.exportCSV=async function(type){
+  showL('CSV Export ചെയ്യുന്നു...');
+  try{
+    const date=today();
+    const cls=AC.replace(/\s/g,'_');
+
+    if(type==='students'||type==='all'){
+      const stus=await getStuDB();
+      const head=['Sl.No','Adm.No','Name','Gender','Address','Skills','Father','Father Occ','Mother','Mother Occ','Father Phone','Mother Phone','WA Phone'];
+      const rows=stus.map(s=>[s.roll,s.admNo||'',s.name,s.gender==='M'?'Male':'Female',s.addr||'',s.skills||'',s.father||'',s.focc||'',s.mother||'',s.mocc||'',s.fphone||'',s.mphone||'',s.waphone||''].map(escCSV).join(','));
+      const csv=[head.join(','),...rows].join('\n');
+      downloadCSV(`Students_${cls}_${date}.csv`,csv);
+      if(type==='students'){hideL();toast('Students CSV downloaded ✓');return;}
+    }
+
+    if(type==='attendance'||type==='all'){
+      const stus=await getStuDB();
+      const allAtt=await fGC('att_'+ck(AC));
+      const dates=Object.keys(allAtt).sort();
+      const head=['Sl.No','Adm.No','Name',...dates];
+      const rows=stus.map(s=>{
+        const attVals=dates.map(d=>{
+          const v=(allAtt[d]||{})[s.id]||'';
+          return v==='P'?'Present':v==='A'?'Absent':v==='L'?'Late':'—';
+        });
+        return[s.roll,s.admNo||'',s.name,...attVals].map(escCSV).join(',');
+      });
+      // Summary row
+      const summary=['','','Total Present',...dates.map(d=>{
+        const day=allAtt[d]||{};
+        return Object.values(day).filter(v=>v==='P'||v==='L').length;
+      })].map(escCSV).join(',');
+      const csv=[head.join(','),...rows,summary].join('\n');
+      downloadCSV(`Attendance_${cls}_${date}.csv`,csv);
+      if(type==='attendance'){hideL();toast('Attendance CSV downloaded ✓');return;}
+    }
+
+    if(type==='te'||type==='all'){
+      const stus=await getStuDB();
+      const tad=await fGC('te_acts_'+ck(AC));
+      const acts=Object.values(tad).sort((a,b)=>a.createdAt-b.createdAt);
+      const tg=await fG('te_grades_'+ck(AC),'data')||{};
+      const head=['Sl.No','Adm.No','Name',...acts.flatMap(a=>[`${a.name} T${a.term} TE(/${a.teMax})`,`TE%`,`TE Grade`,`CE(/${a.ceMax})`,`CE%`,`CE Grade`])];
+      const rows=stus.map(s=>{
+        const row=[s.roll,s.admNo||'',s.name];
+        acts.forEach(a=>{
+          const tm=tg[`${s.id}_${a.id}_te`];
+          const cm=tg[`${s.id}_${a.id}_ce`];
+          const tp=tm!==undefined?Math.round(tm/a.teMax*100):null;
+          const cp=cm!==undefined?Math.round(cm/a.ceMax*100):null;
+          row.push(
+            tm!==undefined?tm:'',tp!==null?tp+'%':'',tp!==null?gFor(tp,teGR).label:'',
+            cm!==undefined?cm:'',cp!==null?cp+'%':'',cp!==null?gFor(cp,teGR).label:''
+          );
+        });
+        return row.map(escCSV).join(',');
+      });
+      const csv=[head.join(','),...rows].join('\n');
+      downloadCSV(`TermEval_${cls}_${date}.csv`,csv);
+      if(type==='te'){hideL();toast('Term Eval CSV downloaded ✓');return;}
+    }
+
+    if(type==='ct'||type==='all'){
+      const stus=await getStuDB();
+      const ctd=await fGC('ct_acts_'+ck(AC));
+      const acts=Object.values(ctd).sort((a,b)=>a.createdAt-b.createdAt);
+      const cg=await fG('ct_grades_'+ck(AC),'data')||{};
+      const head=['Sl.No','Adm.No','Name',...acts.flatMap(a=>[`${a.name}(/${a.max})`,`%`,`Grade`])];
+      const rows=stus.map(s=>{
+        const row=[s.roll,s.admNo||'',s.name];
+        acts.forEach(a=>{
+          const m=cg[`${s.id}_${a.id}`];
+          const pct=m!==undefined?Math.round(m/a.max*100):null;
+          row.push(m!==undefined?m:'',pct!==null?pct+'%':'',pct!==null?gFor(pct,ctGR).label:'');
+        });
+        return row.map(escCSV).join(',');
+      });
+      const csv=[head.join(','),...rows].join('\n');
+      downloadCSV(`ClassTest_${cls}_${date}.csv`,csv);
+      if(type==='ct'){hideL();toast('Class Test CSV downloaded ✓');return;}
+    }
+
+    if(type==='ca'||type==='all'){
+      const stus=await getStuDB();
+      const cad=await fGC('ca_acts_'+ck(AC));
+      const acts=Object.values(cad).sort((a,b)=>a.createdAt-b.createdAt);
+      const cd=await fG('ca_data_'+ck(AC),'data')||{};
+      const head=['Sl.No','Adm.No','Name',...acts.flatMap(a=>[`${a.name} - Status`,`Remark`])];
+      const rows=stus.map(s=>{
+        const row=[s.roll,s.admNo||'',s.name];
+        acts.forEach(a=>{
+          const done=cd[`${s.id}_${a.id}_done`]===true;
+          const remark=cd[`${s.id}_${a.id}_remark`]||'';
+          row.push(done?'Done':'Pending',a.needsRemark?remark:'N/A');
+        });
+        return row.map(escCSV).join(',');
+      });
+      // Summary
+      const summary=['','','Completion %',...acts.flatMap(a=>{
+        const doneCount=stus.filter(s=>cd[`${s.id}_${a.id}_done`]===true).length;
+        const pct=stus.length?Math.round(doneCount/stus.length*100):0;
+        return[`${doneCount}/${stus.length} (${pct}%)`,''];
+      })].map(escCSV).join(',');
+      const csv=[head.join(','),...rows,summary].join('\n');
+      downloadCSV(`ClassActivity_${cls}_${date}.csv`,csv);
+      if(type==='ca'){hideL();toast('Class Activity CSV downloaded ✓');return;}
+    }
+
+    if(type==='all') toast('All CSV files downloaded ✓');
+  }catch(e){
+    toast('Export Error: '+e.message,'err');
+    console.error(e);
+  }
+  hideL();
+}
 
 // ── BULK UPLOAD ────────────────────────────────────────
 // Columns: Sl.No | Adm.No | Name | Gender(M/F) | Address | Skills | Father | FatherOcc | Mother | MotherOcc | FatherPhone | MotherPhone | WAPhone
@@ -1170,14 +1324,45 @@ window.clearBulk=function(){
   fld('bulk-file').value='';fld('bulk-error').style.display='none';
 }
 
-// Init
-fld('att-date').value=today();fld('te-act-date').value=today();fld('ct-act-date').value=today();fld('ca-act-date').value=today();
-showL('Firebase connecting...');
-try{
-  const gr=await fG('app_config','grade_ranges');if(gr){if(gr.te)teGR=gr.te;if(gr.ct)ctGR=gr.ct;}
-  await loadCls();buildCls();await initAtt();syncOk();toast('☁ Connected ✓');
-}catch(e){syncErr(e);toast('⚠ Firestore Rules check ചെയ്യൂ','err');}
-hideL();
+// ── INIT ──────────────────────────────────────────────
+(async function(){
+  try{
+    fld('att-date').value=today();
+    fld('te-act-date').value=today();
+    fld('ct-act-date').value=today();
+    fld('ca-act-date').value=today();
+    showL('Firebase connecting...');
+
+    // Test connection first
+    const testRef=doc(db,'app_config','ping');
+    await setDoc(testRef,{ts:Date.now()},{merge:true});
+
+    // Load grade ranges
+    const gr=await fG('app_config','grade_ranges');
+    if(gr){if(gr.te&&gr.te.length)teGR=gr.te;if(gr.ct&&gr.ct.length)ctGR=gr.ct;}
+
+    await loadCls();
+    buildCls();
+    await initAtt();
+    syncOk();
+    toast('☁ Firebase Connected ✓');
+  }catch(e){
+    syncErr(e);
+    console.error('Firebase init error:',e);
+    // Show helpful error
+    const msg=e?.code==='permission-denied'
+      ?'Firestore Rules — allow read,write:if true; set ചെയ്യൂ'
+      :e?.code==='unavailable'
+      ?'Internet connection check ചെയ്യൂ'
+      :'Firebase error: '+e?.message;
+    document.getElementById('lmsg').innerHTML=`<span style="color:#c5221f">⚠ ${msg}</span><br><small style="color:#666">Console-ൽ details കാണാം</small>`;
+    // Still hide loader after 5s
+    setTimeout(hideL,5000);
+    return;
+  }
+  hideL();
+})();
 </script>
 </body>
 </html>
+<title></title>
